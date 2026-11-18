@@ -3,7 +3,7 @@
 Verbindet LLM-Clients (Claude, Codex, …) per [Model Context Protocol](https://modelcontextprotocol.io) mit Craft CMS, um Inhalte zu pflegen: Einträge, Assets, Suche. Keine Verwaltungseinstellungen (Sections, Felder, Plugins, Benutzer, System).
 
 ## Status
-`0.1.0` – Phase 1: Gerüst, Token-Verwaltung, Audit-Log, Lese-Tools. Schreib- und Lösch-Tools folgen.
+`0.2.0` – Token-Verwaltung, Audit-Log, Rate-Limit, Lese-, Schreib- und Lösch-Tools. Noch nicht gegen eine Live-Craft-Instanz getestet.
 
 ## Installation
 ```bash
@@ -35,8 +35,11 @@ Entfernt dein Hoster den `Authorization`-Header, nutze stattdessen den Header `X
 - Scopes: `read` (immer), `write`, `delete` (Standard aus). Optionale Section-Einschränkung.
 - Jeder Tool-Aufruf landet im Audit-Log (90 Tage).
 
-## Tools (aktuell)
-`list_sites`, `list_sections`, `get_entry_type`, `search_entries`, `get_entry`, `list_volumes`, `search_assets`, `get_asset`
+## Tools
+| Scope | Tools |
+|---|---|
+| `read` | `list_sites`, `list_sections`, `get_entry_type`, `search_entries`, `get_entry`, `list_volumes`, `list_asset_folders`, `search_assets`, `get_asset`, `list_taxonomies`, `search_terms` |
+| `write` | `create_entry`, `update_entry`, `create_draft`, `publish_draft`, `upload_asset`, `update_asset`, `create_asset_folder`, `create_term`, `update_term` |
+| `delete` | `delete_entry`, `delete_asset`, `delete_term` (Soft-Delete) |
 
-## Geplant
-Entries anlegen/ändern/verschieben/Drafts, Asset-Upload, Kategorien/Tags, Löschen (Scope `delete`), Rate-Limit, optional stdio.
+Neue Einträge werden standardmäßig deaktiviert angelegt. Rate-Limit: 120 Requests/Minute/Token.

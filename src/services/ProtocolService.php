@@ -7,7 +7,9 @@ use craft\base\Component;
 use eventiva\mcp\Mcp;
 use eventiva\mcp\records\TokenRecord;
 use eventiva\mcp\tools\AbstractTool;
+use eventiva\mcp\tools\delete;
 use eventiva\mcp\tools\read;
+use eventiva\mcp\tools\write;
 
 /**
  * Minimal MCP (JSON-RPC 2.0) implementation for the Streamable HTTP transport.
@@ -31,6 +33,21 @@ class ProtocolService extends Component
                 read\ListVolumes::class,
                 read\SearchAssets::class,
                 read\GetAsset::class,
+                read\ListAssetFolders::class,
+                read\ListTaxonomies::class,
+                read\SearchTerms::class,
+                write\CreateEntry::class,
+                write\UpdateEntry::class,
+                write\CreateDraft::class,
+                write\PublishDraft::class,
+                write\UploadAsset::class,
+                write\UpdateAsset::class,
+                write\CreateAssetFolder::class,
+                write\CreateTerm::class,
+                write\UpdateTerm::class,
+                delete\DeleteEntry::class,
+                delete\DeleteAsset::class,
+                delete\DeleteTerm::class,
             ];
             $this->tools = [];
             foreach ($classes as $class) {

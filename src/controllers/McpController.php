@@ -41,6 +41,17 @@ class McpController extends Controller
             return $this->asJson(['error' => 'Invalid or missing token.']);
         }
 
+        // Rate limit: 120 requests / minute / token.
+        $cache = Craft::$app->getCache();
+        $key = 'mcp_rate_' . $token->id . '_' . floor(time() / 60);
+        $count = (int)$cache->get($key) + 1;
+        $cache->set($key, $count, 120);
+        if ($count > 120) {
+            $response->setStatusCode(429);
+            $response->getHeaders()->set('Retry-After', '60');
+            return $this->asJson(['error' => 'Rate limit exceeded (120 requests/minute).']);
+        }
+
         // Run everything as the token's user, so Craft permissions apply.
         Craft::$app->getUser()->setIdentity($user);
         $mcp->tokens->current = $token;
