@@ -1,0 +1,27 @@
+{% extends '_layouts/cp' %}
+
+{% set title = 'MCP – Audit-Log' %}
+
+{% block content %}
+  {% if entries|length %}
+    <table class="data fullwidth">
+      <thead>
+        <tr><th>Zeit</th><th>Token</th><th>Tool</th><th>Argumente</th><th>Ergebnis</th><th>ms</th></tr>
+      </thead>
+      <tbody>
+        {% for e in entries %}
+          <tr>
+            <td>{{ e.dateCreated|date('d.m.Y H:i:s') }}</td>
+            <td>{{ e.tokenName ?? '–' }}</td>
+            <td><code>{{ e.tool }}</code></td>
+            <td style="max-width:360px;word-break:break-all"><small>{{ e.arguments }}</small></td>
+            <td>{% if e.success %}<span class="status green"></span> ok{% else %}<span class="status red"></span> {{ e.message }}{% endif %}</td>
+            <td>{{ e.durationMs }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="light">Noch keine Aufrufe protokolliert.</p>
+  {% endif %}
+{% endblock %}

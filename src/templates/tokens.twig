@@ -1,0 +1,92 @@
+{% extends '_layouts/cp' %}
+{% import '_includes/forms' as forms %}
+
+{% set title = 'MCP – Tokens' %}
+
+{% block content %}
+  {% if newToken %}
+    <div class="readable" style="margin-bottom:24px">
+      <div class="pane" style="border:2px solid #0b69a3">
+        <h2>Neuer Token – jetzt kopieren</h2>
+        <p>Dieser Token wird nur <strong>einmal</strong> angezeigt und ist danach nicht mehr abrufbar.</p>
+        <pre class="code" style="user-select:all;white-space:pre-wrap;word-break:break-all">{{ newToken }}</pre>
+        <p><strong>Claude Code:</strong></p>
+        <pre class="code" style="user-select:all;white-space:pre-wrap;word-break:break-all">claude mcp add --transport http craft {{ endpoint }} --header "Authorization: Bearer {{ newToken }}"</pre>
+        <p><strong>Codex</strong> (<code>~/.codex/config.toml</code>):</p>
+        <pre class="code" style="user-select:all;white-space:pre-wrap;word-break:break-all">[mcp_servers.craft]
+url = "{{ endpoint }}"
+http_headers = { Authorization = "Bearer {{ newToken }}" }</pre>
+      </div>
+    </div>
+  {% endif %}
+
+  <p>Endpoint: <code>{{ endpoint }}</code> (POST, <code>Authorization: Bearer …</code>)</p>
+
+  <h2>Tokens</h2>
+  {% if tokens|length %}
+    <table class="data fullwidth">
+      <thead>
+        <tr><th>Name</th><th>Präfix</th><th>Benutzer-ID</th><th>Rechte</th><th>Sections</th><th>Läuft ab</th><th>Zuletzt genutzt</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for t in tokens %}
+          <tr>
+            <td>{{ t.name }}</td>
+            <td><code>{{ t.tokenPrefix }}…</code></td>
+            <td>{{ t.userId }}</td>
+            <td>{{ t.scopes }}</td>
+            <td>{{ t.allowedSectionList ? t.allowedSectionList|join(', ') : 'alle' }}</td>
+            <td>{{ t.expiresAt ? t.expiresAt|date('d.m.Y') : '–' }}</td>
+            <td>{{ t.lastUsedAt ? t.lastUsedAt|date('d.m.Y H:i') : '–' }}</td>
+            <td>
+              <form method="post" onsubmit="return confirm('Token wirklich widerrufen?')">
+                {{ csrfInput() }}
+                {{ actionInput('mcp/tokens/revoke') }}
+                <input type="hidden" name="id" value="{{ t.id }}">
+                <button class="btn small" type="submit">Widerrufen</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="light">Noch keine Tokens angelegt.</p>
+  {% endif %}
+
+  <hr>
+  <h2>Neuen Token anlegen</h2>
+  <form method="post" accept-charset="UTF-8">
+    {{ csrfInput() }}
+    {{ actionInput('mcp/tokens/create') }}
+
+    {{ forms.textField({ label: 'Name', instructions: 'z. B. „Claude – Redaktion“', name: 'name', required: true }) }}
+
+    {{ forms.selectField({
+      label: 'Craft-Benutzer',
+      instructions: 'Alle Aktionen laufen mit den Rechten dieses Benutzers. Empfehlung: eigener Benutzer mit minimalen Rechten.',
+      name: 'userId', options: users, required: true
+    }) }}
+
+    {{ forms.checkboxGroupField({
+      label: 'Rechte',
+      instructions: 'Lesen ist immer aktiv. Löschen bewusst nur bei Bedarf aktivieren.',
+      name: 'scopes',
+      options: [
+        { label: 'write – Einträge/Assets anlegen und ändern', value: 'write' },
+        { label: 'delete – Einträge/Assets löschen', value: 'delete' },
+      ],
+    }) }}
+
+    {{ forms.checkboxGroupField({
+      label: 'Sections einschränken',
+      instructions: 'Nichts ausgewählt = alle Sections.',
+      name: 'allowedSections',
+      options: sections,
+    }) }}
+
+    {{ forms.dateField({ label: 'Ablaufdatum (optional)', name: 'expiresAt' }) }}
+
+    <button class="btn submit" type="submit">Token erstellen</button>
+  </form>
+{% endblock %}

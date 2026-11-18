@@ -1,0 +1,47 @@
+{
+  "name": "eventiva/craft-mcp",
+  "description": "Model Context Protocol (MCP) server for Craft CMS – lets Claude, Codex and other LLM clients manage entries, assets and content through scoped API tokens.",
+  "type": "craft-plugin",
+  "license": "proprietary",
+  "keywords": [
+    "craft",
+    "craftcms",
+    "cms",
+    "mcp",
+    "model-context-protocol",
+    "ai",
+    "llm",
+    "claude",
+    "codex"
+  ],
+  "require": {
+    "php": ">=8.2",
+    "craftcms/cms": "^5.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "eventiva\\mcp\\": "src/"
+    }
+  },
+  "extra": {
+    "handle": "mcp",
+    "name": "MCP Server",
+    "version": "0.1.0",
+    "schemaVersion": "1.0.0",
+    "developer": "Eventiva",
+    "developerUrl": "https://eventiva.io",
+    "documentationUrl": "https://github.com/eventiva-solutions/CraftCMS-MCP#readme",
+    "changelogUrl": "https://raw.githubusercontent.com/eventiva-solutions/CraftCMS-MCP/main/CHANGELOG.md",
+    "class": "eventiva\\mcp\\Mcp"
+  },
+  "config": {
+    "sort-packages": true,
+    "platform": {
+      "php": "8.2"
+    },
+    "allow-plugins": {
+      "yiisoft/yii2-composer": true,
+      "craftcms/plugin-installer": true
+    }
+  }
+}
