@@ -65,6 +65,7 @@ Craft silently drops unknown block types and **deletes every block that is not s
 - A call that would **delete existing blocks** is refused and names the blocks that would be lost. Send them again with their `id`, add blocks with `{"mode": "append", "blocks": [...]}`, or confirm the removal with `allowBlockRemoval: true`.
 - Sending back the Matrix value exactly as `get_entry` returned it changes nothing.
 - Write and update responses include the resulting block count per Matrix field (`"blocks": {"faq": 3}`).
+- If a new block leaves a **required** field empty, the response contains a `warnings` entry. Craft only enforces required fields once the entry is enabled, so such an entry cannot be enabled or published until the field is filled.
 
 ```jsonc
 // add one block, keep all existing ones

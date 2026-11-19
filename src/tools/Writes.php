@@ -13,6 +13,9 @@ trait Writes
     /** Matrix fields touched by the last applyFields() call (handle => field). */
     private array $touchedMatrix = [];
 
+    /** Non-fatal hints collected while preparing values (e.g. empty required fields in new blocks). */
+    private array $writeWarnings = [];
+
     /**
      * Validates field handles against the element's field layout and sets the values.
      * Matrix values are validated and normalized first, because Craft silently drops
@@ -21,6 +24,8 @@ trait Writes
     protected function applyFields(ElementInterface $element, mixed $fields, bool $allowBlockRemoval = false): void
     {
         $this->touchedMatrix = [];
+        $this->writeWarnings = [];
+        $fields = $this->jsonArg($fields);
 
         if ($fields === null || $fields === []) {
             return;
@@ -50,6 +55,19 @@ trait Writes
         $element->setFieldValues($fields);
     }
 
+    /** Extra info for write responses: Matrix block counts and warnings. */
+    protected function writeExtras(ElementInterface $element): array
+    {
+        $extras = [];
+        if ($blocks = $this->matrixReport($element)) {
+            $extras['blocks'] = $blocks;
+        }
+        if ($this->writeWarnings) {
+            $extras['warnings'] = array_values(array_unique($this->writeWarnings));
+        }
+        return $extras;
+    }
+
     /** Block counts per Matrix field that was written, e.g. ['faq' => 3] (empty if none). */
     protected function matrixReport(ElementInterface $element): array
     {
@@ -72,6 +90,7 @@ trait Writes
     private function prepareMatrixValue(Matrix $field, mixed $value, ElementInterface $element, bool $allowRemoval): array
     {
         $handle = $field->handle;
+        $value = $this->jsonArg($value);
         if ($value === null || $value === '') {
             $value = [];
         }
@@ -148,6 +167,9 @@ trait Writes
                 $type = $types[$typeHandle];
             }
 
+            if (isset($block['fields'])) {
+                $block['fields'] = $this->jsonArg($block['fields']);
+            }
             if (isset($block['fields']) && !is_array($block['fields'])) {
                 throw new \InvalidArgumentException("$label: 'fields' must be an object of fieldHandle => value.");
             }
@@ -158,6 +180,20 @@ trait Writes
                     "$label (type '{$type->handle}'): unknown field(s) " . implode(', ', $unknownInBlock) .
                     '. Valid fields: ' . implode(', ', $valid) . '.'
                 );
+            }
+
+            // New blocks: warn about empty required fields (Craft only enforces them once the entry is enabled).
+            if ($id === null) {
+                foreach ($type->getFieldLayout()->getCustomFieldElements() as $layoutElement) {
+                    if (!$layoutElement->required) {
+                        continue;
+                    }
+                    $requiredHandle = $layoutElement->getField()->handle;
+                    $given = $block['fields'][$requiredHandle] ?? null;
+                    if ($given === null || $given === '' || $given === []) {
+                        $this->writeWarnings[] = "$label (type '{$type->handle}'): required field '$requiredHandle' is empty. The entry cannot be enabled or published until it is filled.";
+                    }
+                }
             }
 
             // Nested Matrix fields inside a block get the same validation.
@@ -197,6 +233,9 @@ trait Writes
         $new = 0;
         foreach ($list as [$id, $block]) {
             $data = array_intersect_key($block, array_flip(['title', 'slug', 'enabled', 'fields']));
+            if (array_key_exists('enabled', $data)) {
+                $data['enabled'] = $this->boolArg($data['enabled'], true);
+            }
             if ($id !== null) {
                 $out[$id] = $data;
             } else {

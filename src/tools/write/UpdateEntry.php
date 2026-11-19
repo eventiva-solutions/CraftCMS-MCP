@@ -68,7 +68,7 @@ class UpdateEntry extends AbstractTool
             $entry->slug = (string)$args['slug'];
         }
         if (array_key_exists('enabled', $args)) {
-            $entry->enabled = (bool)$args['enabled'];
+            $entry->enabled = $this->boolArg($args['enabled']);
         }
         if (!empty($args['postDate'])) {
             $entry->postDate = $this->parseDate($args['postDate']);
@@ -76,11 +76,11 @@ class UpdateEntry extends AbstractTool
         if (array_key_exists('parentId', $args)) {
             $entry->setParentId((int)$args['parentId'] ?: null);
         }
-        $this->applyFields($entry, $args['fields'] ?? null, !empty($args['allowBlockRemoval']));
+        $this->applyFields($entry, $args['fields'] ?? null, $this->boolArg($args['allowBlockRemoval'] ?? null));
 
         $this->assertCanSave($entry);
         $this->saveOrFail($entry);
 
-        return $this->entrySummary($entry) + ($this->matrixReport($entry) ? ['blocks' => $this->matrixReport($entry)] : []);
+        return $this->entrySummary($entry) + $this->writeExtras($entry);
     }
 }

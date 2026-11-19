@@ -69,6 +69,49 @@ abstract class AbstractTool
         return $user;
     }
 
+    /**
+     * Some MCP clients send arrays/objects as JSON strings. Decode those; leave everything else alone.
+     */
+    protected function jsonArg(mixed $value): mixed
+    {
+        if (is_string($value)) {
+            $trimmed = trim($value);
+            if ($trimmed !== '' && in_array($trimmed[0], ['[', '{'], true)) {
+                $decoded = json_decode($trimmed, true);
+                if (is_array($decoded)) {
+                    return $decoded;
+                }
+            }
+        }
+        return $value;
+    }
+
+    /** A list of strings from an array, a JSON string or a comma separated string; null if empty. */
+    protected function stringList(mixed $value): ?array
+    {
+        $value = $this->jsonArg($value);
+        if (is_string($value) && $value !== '') {
+            $value = array_map('trim', explode(',', $value));
+        }
+        if (!is_array($value)) {
+            return null;
+        }
+        $list = array_values(array_filter(array_map('strval', $value), fn(string $s) => $s !== ''));
+        return $list ?: null;
+    }
+
+    /** Booleans arrive as real booleans, but also as "true"/"false"/"1"/"0" strings. "false" must be false. */
+    protected function boolArg(mixed $value, bool $default = false): bool
+    {
+        if ($value === null) {
+            return $default;
+        }
+        if (is_string($value)) {
+            return in_array(strtolower(trim($value)), ['1', 'true', 'yes', 'on'], true);
+        }
+        return (bool)$value;
+    }
+
     protected function limit(array $args, int $default = 20, int $max = 100): int
     {
         return max(1, min($max, (int)($args['limit'] ?? $default)));

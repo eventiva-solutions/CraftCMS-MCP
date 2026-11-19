@@ -83,7 +83,7 @@ class CreateEntry extends AbstractTool
         $entry->typeId = $type->id;
         $entry->siteId = $site->id;
         $entry->title = $args['title'];
-        $entry->enabled = (bool)($args['enabled'] ?? false);
+        $entry->enabled = $this->boolArg($args['enabled'] ?? null, false);
         $entry->setAuthorId($this->user()->id);
         if (!empty($args['slug'])) {
             $entry->slug = $args['slug'];
@@ -99,6 +99,6 @@ class CreateEntry extends AbstractTool
         $this->assertCanSave($entry);
         $this->saveOrFail($entry);
 
-        return $this->entrySummary($entry) + ($this->matrixReport($entry) ? ['blocks' => $this->matrixReport($entry)] : []);
+        return $this->entrySummary($entry) + $this->writeExtras($entry);
     }
 }

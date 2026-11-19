@@ -1,5 +1,10 @@
 # Release Notes for MCP Server
 
+## 0.5.1 - 2026-11-19
+- **Safety:** boolean arguments sent as strings are now interpreted correctly. `enabled: "false"` used to become `true` (and could publish an entry); the same applies to `allowBlockRemoval` and block `enabled`.
+- Arrays and objects sent as JSON strings are accepted for `fields` (also Matrix values and block fields); `get_entry` accepts `fields` as an array, a JSON string, a comma separated list or a single handle (the filter was silently ignored for strings before)
+- Write responses contain `warnings` when a new Matrix block leaves a required field empty (Craft only enforces required fields once the entry is enabled)
+
 ## 0.5.0 - 2026-11-19
 - **Matrix safety:** unknown block types, unknown field handles in blocks and unknown block IDs are rejected with the list of allowed values (Craft silently drops them). Updates that would delete existing blocks are refused unless `allowBlockRemoval=true`; `{"mode": "append"}` adds blocks without touching existing ones. Nested Matrix fields are validated as well.
 - `get_entry_type` lists block types (and their fields) of Matrix fields and adds a `valueFormat` hint to fields (e.g. "HTML string (rich text)", "array of element IDs")

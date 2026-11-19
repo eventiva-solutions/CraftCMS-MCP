@@ -58,7 +58,7 @@ class UpdateTerm extends AbstractTool
             $term->slug = (string)$args['slug'];
         }
         if (array_key_exists('enabled', $args)) {
-            $term->enabled = (bool)$args['enabled'];
+            $term->enabled = $this->boolArg($args['enabled']);
         }
         if (array_key_exists('parentId', $args) && $args['type'] === 'category') {
             $term->setParentId((int)$args['parentId'] ?: null);

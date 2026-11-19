@@ -54,7 +54,7 @@ class GetEntry extends AbstractTool
             throw new \RuntimeException('The token user may not view this entry.');
         }
 
-        $only = isset($args['fields']) && is_array($args['fields']) && $args['fields'] ? array_values($args['fields']) : null;
+        $only = $this->stringList($args['fields'] ?? null);
         $values = $entry->getSerializedFieldValues($only);
 
         // Without an explicit field list, shorten huge SEO bundles (e.g. SEOmatic) to the essentials.

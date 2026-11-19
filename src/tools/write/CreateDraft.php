@@ -69,13 +69,13 @@ class CreateDraft extends AbstractTool
             $changed = true;
         }
         if (!empty($args['fields'])) {
-            $this->applyFields($draft, $args['fields'], !empty($args['allowBlockRemoval']));
+            $this->applyFields($draft, $args['fields'], $this->boolArg($args['allowBlockRemoval'] ?? null));
             $changed = true;
         }
         if ($changed) {
             $this->saveOrFail($draft);
         }
 
-        return $this->entrySummary($draft) + ['draftElementId' => $draft->id] + ($this->matrixReport($draft) ? ['blocks' => $this->matrixReport($draft)] : []);
+        return $this->entrySummary($draft) + ['draftElementId' => $draft->id] + $this->writeExtras($draft);
     }
 }
