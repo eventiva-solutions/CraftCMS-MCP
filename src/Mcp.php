@@ -44,7 +44,7 @@ class Mcp extends Plugin
             UrlManager::class,
             UrlManager::EVENT_REGISTER_SITE_URL_RULES,
             function (RegisterUrlRulesEvent $event) {
-                $event->rules['mcp'] = 'mcp/mcp/index';
+                $event->rules['mcp'] = 'mcp-server/mcp/index';
             }
         );
 
@@ -53,11 +53,11 @@ class Mcp extends Plugin
             UrlManager::class,
             UrlManager::EVENT_REGISTER_CP_URL_RULES,
             function (RegisterUrlRulesEvent $event) {
-                $event->rules['mcp'] = 'mcp/tokens/index';
-                $event->rules['mcp/tokens'] = 'mcp/tokens/index';
-                $event->rules['mcp/tokens/create'] = 'mcp/tokens/create';
-                $event->rules['mcp/tokens/revoke'] = 'mcp/tokens/revoke';
-                $event->rules['mcp/audit'] = 'mcp/tokens/audit';
+                $event->rules['mcp-server'] = 'mcp-server/tokens/index';
+                $event->rules['mcp-server/tokens'] = 'mcp-server/tokens/index';
+                $event->rules['mcp-server/tokens/create'] = 'mcp-server/tokens/create';
+                $event->rules['mcp-server/tokens/revoke'] = 'mcp-server/tokens/revoke';
+                $event->rules['mcp-server/audit'] = 'mcp-server/tokens/audit';
             }
         );
     }
@@ -70,11 +70,11 @@ class Mcp extends Plugin
 
         $item = parent::getCpNavItem();
         $item['label'] = 'MCP';
-        $item['url'] = 'mcp';
+        $item['url'] = 'mcp-server';
         $item['icon'] = '@appicons/plug.svg';
         $item['subnav'] = [
-            'tokens' => ['label' => 'Tokens', 'url' => 'mcp/tokens'],
-            'audit' => ['label' => 'Audit-Log', 'url' => 'mcp/audit'],
+            'tokens' => ['label' => 'Tokens', 'url' => 'mcp-server/tokens'],
+            'audit' => ['label' => 'Audit-Log', 'url' => 'mcp-server/audit'],
         ];
         return $item;
     }

@@ -37,7 +37,7 @@ class TokensController extends Controller
             Craft::$app->getEntries()->getAllSections()
         );
 
-        return $this->renderTemplate('mcp/tokens', [
+        return $this->renderTemplate('mcp-server/tokens', [
             'tokens' => $mcp->tokens->all(),
             'users' => $users,
             'sections' => $sections,
@@ -66,7 +66,7 @@ class TokensController extends Controller
         [, $plain] = Mcp::getInstance()->tokens->create($name, $userId, $scopes, $expiresAt, $sections ?: null);
 
         Craft::$app->getSession()->setFlash('mcpNewToken', $plain);
-        return $this->redirect('mcp/tokens');
+        return $this->redirect('mcp-server/tokens');
     }
 
     public function actionRevoke(): Response
@@ -74,12 +74,12 @@ class TokensController extends Controller
         $this->requirePostRequest();
         Mcp::getInstance()->tokens->revoke((int)Craft::$app->getRequest()->getRequiredBodyParam('id'));
         $this->setSuccessFlash('Token widerrufen.');
-        return $this->redirect('mcp/tokens');
+        return $this->redirect('mcp-server/tokens');
     }
 
     public function actionAudit(): Response
     {
-        return $this->renderTemplate('mcp/audit', [
+        return $this->renderTemplate('mcp-server/audit', [
             'entries' => Mcp::getInstance()->audit->recent(),
         ]);
     }

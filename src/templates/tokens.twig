@@ -41,7 +41,7 @@ http_headers = { Authorization = "Bearer {{ newToken }}" }</pre>
             <td>
               <form method="post" onsubmit="return confirm('Token wirklich widerrufen?')">
                 {{ csrfInput() }}
-                {{ actionInput('mcp/tokens/revoke') }}
+                {{ actionInput('mcp-server/tokens/revoke') }}
                 <input type="hidden" name="id" value="{{ t.id }}">
                 <button class="btn small" type="submit">Widerrufen</button>
               </form>
@@ -58,7 +58,7 @@ http_headers = { Authorization = "Bearer {{ newToken }}" }</pre>
   <h2>Neuen Token anlegen</h2>
   <form method="post" accept-charset="UTF-8">
     {{ csrfInput() }}
-    {{ actionInput('mcp/tokens/create') }}
+    {{ actionInput('mcp-server/tokens/create') }}
 
     {{ forms.textField({ label: 'Name', instructions: 'z. B. „Claude – Redaktion“', name: 'name', required: true }) }}
 

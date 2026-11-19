@@ -8,11 +8,11 @@ Verbindet LLM-Clients (Claude, Codex, …) per [Model Context Protocol](https://
 ## Installation
 ```bash
 composer require eventiva/craft-mcp
-php craft plugin/install mcp
+php craft plugin/install mcp-server
 ```
 
 ## Einrichtung
-1. CP → **MCP → Tokens** → Token anlegen (Craft-Benutzer, Rechte `write`/`delete`, optional Sections, Ablaufdatum).
+1. CP → **MCP → Tokens** (`/admin/mcp-server`) → Token anlegen (Craft-Benutzer, Rechte `write`/`delete`, optional Sections, Ablaufdatum).
 2. Token wird einmalig angezeigt, zusammen mit fertigen Befehlen:
 
 ```bash
