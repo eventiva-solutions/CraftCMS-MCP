@@ -36,6 +36,7 @@ Unlike a plain database or console bridge, MCP Server is built for **content**, 
 - **Limit by section** and set an **expiry date** per token; revoke tokens at any time.
 - **Audit log** of every tool call in the control panel.
 - **Rate limiting** per token and **SSRF protection** for URL uploads.
+- **Safe with Matrix and nested content:** unknown block types are rejected, and an update can never silently delete existing blocks.
 - New entries are created **disabled**, and changes to live content can go through **drafts**.
 - Tokens are stored only as hashes and shown once.
 

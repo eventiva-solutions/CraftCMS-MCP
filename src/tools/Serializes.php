@@ -22,7 +22,7 @@ trait Serializes
             'uri' => $entry->uri,
             'url' => $entry->getUrl(),
             'cpEditUrl' => $entry->getCpEditUrl(),
-        ];
+        ] + ($entry->getIsDraft() ? ['isDraft' => true, 'canonicalId' => $entry->getCanonicalId(), 'draftId' => $entry->draftId] : []);
     }
 
     protected function assetSummary(Asset $asset): array

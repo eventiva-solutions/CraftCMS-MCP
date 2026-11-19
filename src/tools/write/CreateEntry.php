@@ -99,6 +99,6 @@ class CreateEntry extends AbstractTool
         $this->assertCanSave($entry);
         $this->saveOrFail($entry);
 
-        return $this->entrySummary($entry);
+        return $this->entrySummary($entry) + ($this->matrixReport($entry) ? ['blocks' => $this->matrixReport($entry)] : []);
     }
 }

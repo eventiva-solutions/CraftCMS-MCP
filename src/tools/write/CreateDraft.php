@@ -35,6 +35,7 @@ class CreateDraft extends AbstractTool
             'title' => ['type' => 'string'],
             'slug' => ['type' => 'string'],
             'fields' => $this->fieldsProperty(),
+            'allowBlockRemoval' => $this->allowBlockRemovalProperty(),
         ];
     }
 
@@ -68,13 +69,13 @@ class CreateDraft extends AbstractTool
             $changed = true;
         }
         if (!empty($args['fields'])) {
-            $this->applyFields($draft, $args['fields']);
+            $this->applyFields($draft, $args['fields'], !empty($args['allowBlockRemoval']));
             $changed = true;
         }
         if ($changed) {
             $this->saveOrFail($draft);
         }
 
-        return $this->entrySummary($draft) + ['draftId' => $draft->draftId, 'draftElementId' => $draft->id];
+        return $this->entrySummary($draft) + ['draftElementId' => $draft->id] + ($this->matrixReport($draft) ? ['blocks' => $this->matrixReport($draft)] : []);
     }
 }

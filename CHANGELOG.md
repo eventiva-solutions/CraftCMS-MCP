@@ -1,5 +1,11 @@
 # Release Notes for MCP Server
 
+## 0.5.0 - 2026-11-19
+- **Matrix safety:** unknown block types, unknown field handles in blocks and unknown block IDs are rejected with the list of allowed values (Craft silently drops them). Updates that would delete existing blocks are refused unless `allowBlockRemoval=true`; `{"mode": "append"}` adds blocks without touching existing ones. Nested Matrix fields are validated as well.
+- `get_entry_type` lists block types (and their fields) of Matrix fields and adds a `valueFormat` hint to fields (e.g. "HTML string (rich text)", "array of element IDs")
+- `get_entry` and `update_entry` accept the `draftElementId` of a draft; entry summaries show `isDraft` / `canonicalId`
+- Write responses include the resulting block count per Matrix field
+
 ## 0.4.0 - 2026-11-19
 - Added Craft License (`LICENSE.md`), English `README.md`, `SECURITY.md` and Plugin Store texts (`docs/store-listing.md`)
 - Added unit tests (tool catalogue, scopes, schemas) and an end-to-end smoke test script

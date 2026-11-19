@@ -18,13 +18,13 @@ class GetEntry extends AbstractTool
 
     public function description(): string
     {
-        return 'Returns one entry including all custom field values (serialized: asset/relation fields as ID lists, rich text as HTML, Matrix as block arrays).';
+        return 'Returns one entry including all custom field values (serialized: asset/relation fields as ID lists, rich text as HTML, Matrix as an object of blocks keyed by block ID). Also accepts the draftElementId returned by create_draft to review a draft before publishing it.';
     }
 
     public function properties(): array
     {
         return [
-            'id' => ['type' => 'integer', 'description' => 'Entry ID.'],
+            'id' => ['type' => 'integer', 'description' => 'Entry ID, or draftElementId of a draft.'],
             'site' => ['type' => 'string', 'description' => 'Site handle (default: primary site).'],
             'fields' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Only return these custom field handles (saves context). Omit for all fields; large SEO bundles are then shortened to title/description.'],
         ];
@@ -37,7 +37,7 @@ class GetEntry extends AbstractTool
 
     public function run(array $args): mixed
     {
-        $q = Entry::find()->id((int)$args['id'])->status(null);
+        $q = Entry::find()->id((int)$args['id'])->drafts(null)->status(null);
         if (!empty($args['site'])) {
             $q->site($args['site']);
         }

@@ -57,6 +57,32 @@ Highlights:
 - New entries are created **disabled** by default. Changes to live content are best made through drafts.
 - Content created or changed through MCP is indexed for search immediately.
 
+## Matrix fields (nested blocks)
+Craft silently drops unknown block types and **deletes every block that is not sent again** when a Matrix field is saved. The plugin protects you from both:
+
+- `get_entry_type` lists every Matrix field's allowed **block types** and the fields of each block type (nested Matrix fields included).
+- Unknown block types, unknown field handles inside a block and unknown block IDs are **rejected with a clear error** that lists the allowed values. Nothing is changed.
+- A call that would **delete existing blocks** is refused and names the blocks that would be lost. Send them again with their `id`, add blocks with `{"mode": "append", "blocks": [...]}`, or confirm the removal with `allowBlockRemoval: true`.
+- Sending back the Matrix value exactly as `get_entry` returned it changes nothing.
+- Write and update responses include the resulting block count per Matrix field (`"blocks": {"faq": 3}`).
+
+```jsonc
+// add one block, keep all existing ones
+{"id": 123, "fields": {"faq": {"mode": "append", "blocks": [
+  {"type": "faq", "title": "New question", "fields": {"answer": "..."}}
+]}}}
+
+// edit one block, keep the others, add a new one
+{"id": 123, "fields": {"faq": [
+  {"id": 501, "fields": {"answer": "Updated"}},
+  {"id": 502},
+  {"type": "faq", "title": "New question", "fields": {"answer": "..."}}
+]}}
+```
+
+## Drafts
+`create_draft` returns a `draftElementId`. `get_entry` and `update_entry` accept that ID, so a draft can be reviewed and refined before `publish_draft` applies it. Drafts have their own block IDs, read them with `get_entry` on the draft.
+
 ## Security
 - Tokens are stored only as SHA-256 hashes and are never shown again.
 - Every action runs with the Craft permissions of the token's user, on top of the token scopes.

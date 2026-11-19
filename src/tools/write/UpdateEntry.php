@@ -18,7 +18,7 @@ class UpdateEntry extends AbstractTool
 
     public function description(): string
     {
-        return 'Updates an entry. Only the given arguments change; "fields" is merged partially (omitted fields stay untouched). Also used to enable/disable (enabled), move in a structure (parentId, 0 = root) or rename (title/slug). Use search_entries/get_entry first.';
+        return 'Updates an entry or a draft (pass the draftElementId from create_draft). Only the given arguments change; fields you do not send stay untouched, BUT a Matrix field you send replaces all its blocks (see the "fields" description; blocks that would be deleted are refused unless allowBlockRemoval=true). Also used to enable/disable (enabled), move in a structure (parentId, 0 = root) or rename (title/slug). Read the entry with get_entry first.';
     }
 
     public function scope(): string
@@ -29,7 +29,7 @@ class UpdateEntry extends AbstractTool
     public function properties(): array
     {
         return [
-            'id' => ['type' => 'integer'],
+            'id' => ['type' => 'integer', 'description' => 'Entry ID or draftElementId.'],
             'site' => ['type' => 'string', 'description' => 'Site handle (default: primary site).'],
             'title' => ['type' => 'string'],
             'slug' => ['type' => 'string'],
@@ -37,6 +37,7 @@ class UpdateEntry extends AbstractTool
             'postDate' => ['type' => 'string', 'description' => 'ISO 8601 date.'],
             'parentId' => ['type' => 'integer', 'description' => 'New parent entry ID in a structure section; 0 moves to root.'],
             'fields' => $this->fieldsProperty(),
+            'allowBlockRemoval' => $this->allowBlockRemovalProperty(),
         ];
     }
 
@@ -47,7 +48,7 @@ class UpdateEntry extends AbstractTool
 
     public function run(array $args): mixed
     {
-        $q = Entry::find()->id((int)$args['id'])->status(null);
+        $q = Entry::find()->id((int)$args['id'])->drafts(null)->status(null);
         if (!empty($args['site'])) {
             $q->site($args['site']);
         }
@@ -75,11 +76,11 @@ class UpdateEntry extends AbstractTool
         if (array_key_exists('parentId', $args)) {
             $entry->setParentId((int)$args['parentId'] ?: null);
         }
-        $this->applyFields($entry, $args['fields'] ?? null);
+        $this->applyFields($entry, $args['fields'] ?? null, !empty($args['allowBlockRemoval']));
 
         $this->assertCanSave($entry);
         $this->saveOrFail($entry);
 
-        return $this->entrySummary($entry);
+        return $this->entrySummary($entry) + ($this->matrixReport($entry) ? ['blocks' => $this->matrixReport($entry)] : []);
     }
 }
