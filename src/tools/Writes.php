@@ -42,6 +42,13 @@ trait Writes
             }
             throw new \RuntimeException('Saving failed – ' . ($errors ? implode(' | ', $errors) : 'unknown error'));
         }
+
+        // Craft indexes via the queue; index right away so search finds the content immediately.
+        try {
+            Craft::$app->getSearch()->indexElementAttributes($element);
+        } catch (\Throwable $e) {
+            Craft::warning('MCP: search indexing failed: ' . $e->getMessage(), __METHOD__);
+        }
     }
 
     protected function assertCanSave(ElementInterface $element): void

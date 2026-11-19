@@ -57,7 +57,7 @@ class UpdateAsset extends AbstractTool
             $asset->title = (string)$args['title'];
         }
         if (array_key_exists('alt', $args)) {
-            $asset->alt = (string)$args['alt'];
+            $asset->alt = $args['alt'] === '' || $args['alt'] === null ? null : (string)$args['alt'];
         }
         $this->applyFields($asset, $args['fields'] ?? null);
 

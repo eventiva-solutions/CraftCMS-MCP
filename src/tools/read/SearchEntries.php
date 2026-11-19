@@ -41,6 +41,7 @@ class SearchEntries extends AbstractTool
             ->status(($args['status'] ?? 'any') === 'any' ? null : $args['status'])
             ->limit($this->limit($args))
             ->offset(max(0, (int)($args['offset'] ?? 0)))
+            ->sectionId(':notempty:') // skip nested (Matrix) entries
             ->orderBy($this->orderBy($args['orderBy'] ?? 'dateUpdated DESC'));
 
         if (!empty($args['query'])) {

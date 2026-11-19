@@ -1,5 +1,12 @@
 # Release Notes for MCP Server
 
+## 0.3.1 - 2026-11-19
+- Fix: `get_entry_type` with a handle failed on Craft 5.11 (`getIsTranslatable()` needs an argument)
+- Content created or changed through MCP is indexed for search immediately (no queue run needed)
+- `get_entry`: new `fields` parameter; big SEO bundles (e.g. SEOmatic) are shortened by default
+- `search_entries` no longer returns nested (Matrix) entries
+- `update_asset`: an empty alt text resets the value to `null`
+
 ## 0.3.0 - 2026-11-19
 - Plugin handle is now `mcp-server`, tables are `mcpserver_tokens` / `mcpserver_audit` (no clash with `stimmt/craft-mcp`)
 - Fix: `update_asset` failed when only changing metadata; rename/move now uses the Assets service

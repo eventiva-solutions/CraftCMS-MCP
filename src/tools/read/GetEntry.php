@@ -26,6 +26,7 @@ class GetEntry extends AbstractTool
         return [
             'id' => ['type' => 'integer', 'description' => 'Entry ID.'],
             'site' => ['type' => 'string', 'description' => 'Site handle (default: primary site).'],
+            'fields' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Only return these custom field handles (saves context). Omit for all fields; large SEO bundles are then shortened to title/description.'],
         ];
     }
 
@@ -53,8 +54,21 @@ class GetEntry extends AbstractTool
             throw new \RuntimeException('The token user may not view this entry.');
         }
 
-        return $this->entrySummary($entry) + [
-            'fields' => $entry->getSerializedFieldValues(),
-        ];
+        $only = isset($args['fields']) && is_array($args['fields']) && $args['fields'] ? array_values($args['fields']) : null;
+        $values = $entry->getSerializedFieldValues($only);
+
+        // Without an explicit field list, shorten huge SEO bundles (e.g. SEOmatic) to the essentials.
+        if ($only === null) {
+            foreach ($values as $handle => $value) {
+                if (is_array($value) && isset($value['metaGlobalVars']) && is_array($value['metaGlobalVars'])) {
+                    $values[$handle] = [
+                        '_note' => 'SEO bundle shortened. Pass fields:["' . $handle . '"] to get everything.',
+                        'metaGlobalVars' => array_intersect_key($value['metaGlobalVars'], array_flip(['seoTitle', 'seoDescription', 'canonicalUrl'])),
+                    ];
+                }
+            }
+        }
+
+        return $this->entrySummary($entry) + ['fields' => $values];
     }
 }

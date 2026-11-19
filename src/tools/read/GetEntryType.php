@@ -47,7 +47,7 @@ class GetEntryType extends AbstractTool
                 'type' => (new \ReflectionClass($field))->getShortName(),
                 'required' => (bool)$element->required,
                 'instructions' => $element->instructions ?: $field->instructions,
-                'translatable' => $field->getIsTranslatable() ,
+                'translatable' => $field->getIsTranslatable(null),
             ];
             if ($field instanceof BaseOptionsField) {
                 $info['options'] = array_map(fn($o) => ['label' => $o['label'], 'value' => $o['value']], $field->options);
