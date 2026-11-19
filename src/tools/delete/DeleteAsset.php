@@ -5,11 +5,12 @@ namespace eventiva\mcp\tools\delete;
 use Craft;
 use craft\elements\Asset;
 use eventiva\mcp\tools\AbstractTool;
+use eventiva\mcp\tools\Reviews;
 use eventiva\mcp\tools\Writes;
 
 class DeleteAsset extends AbstractTool
 {
-    use Writes;
+    use Writes, Reviews;
 
     public function name(): string
     {
@@ -44,6 +45,12 @@ class DeleteAsset extends AbstractTool
             throw new \InvalidArgumentException("Asset {$args['id']} not found.");
         }
         $this->assertCanDelete($asset);
+
+        if ($this->reviewRequired()) {
+            $change = $this->review()->findPending(['asset_delete'], $asset->id)
+                ?: $this->review()->queue('asset_delete', $asset->id, null, (string)$asset->filename, null, ['filename' => $asset->filename]);
+            return $this->pendingInfo($change, 'Deletion was requested but NOT carried out. A human must approve it in the control panel (MCP → Freigaben). Use list_my_changes to see the decision.', ['deleted' => false, 'id' => (int)$args['id'], 'filename' => $asset->filename]);
+        }
 
         if (!Craft::$app->getElements()->deleteElement($asset)) {
             throw new \RuntimeException('Asset could not be deleted.');

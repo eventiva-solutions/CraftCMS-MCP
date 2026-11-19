@@ -1,6 +1,8 @@
 # MCP Server for Craft CMS (Deutsch)
 
 > Die vollständige, aktuelle Dokumentation (Englisch): [README.md](README.md)
+>
+> Kurz: Mit **Freigabepflicht** am Token geht nichts ohne menschliche Entscheidung live. Änderungen werden Entwürfe, Löschen wird nur vorgemerkt, Uploads werden zur Prüfung aufgelistet. Unter **MCP → Freigaben** gibt es eine Vorher/Nachher-Ansicht, einzelnes oder gesammeltes Freigeben und Ablehnen (mit Grund) und eine Historie. Die Oberfläche ist englisch, mit deutscher Übersetzung.
 
 Verbindet LLM-Clients (Claude, Codex, …) per [Model Context Protocol](https://modelcontextprotocol.io) mit Craft CMS, um Inhalte zu pflegen: Einträge, Entwürfe, Assets, Kategorien und Tags, dazu eine Suche. **Keine Verwaltungseinstellungen**: Sections, Entry Types, Felder, Plugins, Benutzer und System bleiben unerreichbar. Sections und Felder können nur gelesen werden.
 

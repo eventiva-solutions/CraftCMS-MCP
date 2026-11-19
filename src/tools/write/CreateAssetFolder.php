@@ -23,6 +23,12 @@ class CreateAssetFolder extends AbstractTool
         return 'write';
     }
 
+    /** Not reviewable: there is no draft mechanism for this, so it is unavailable while approval is required. */
+    public function availableInReview(): bool
+    {
+        return false;
+    }
+
     public function properties(): array
     {
         return [

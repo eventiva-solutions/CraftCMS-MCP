@@ -5,6 +5,7 @@ namespace eventiva\mcp\tools;
 use Craft;
 use craft\elements\User;
 use eventiva\mcp\Mcp;
+use eventiva\mcp\services\ReviewService;
 
 abstract class AbstractTool
 {
@@ -58,7 +59,26 @@ abstract class AbstractTool
         ];
     }
 
+    /**
+     * Tokens that require approval cannot use tools that change content without an approval step
+     * (they are hidden from tools/list and refused when called).
+     */
+    public function availableInReview(): bool
+    {
+        return true;
+    }
+
     // -- helpers ---------------------------------------------------------
+
+    protected function review(): ReviewService
+    {
+        return Mcp::getInstance()->review;
+    }
+
+    protected function reviewRequired(): bool
+    {
+        return $this->review()->requiresReview();
+    }
 
     protected function user(): User
     {

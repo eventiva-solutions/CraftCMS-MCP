@@ -7,11 +7,12 @@ use craft\elements\Asset;
 use craft\helpers\FileHelper;
 use eventiva\mcp\tools\AbstractTool;
 use eventiva\mcp\tools\Serializes;
+use eventiva\mcp\tools\Reviews;
 use eventiva\mcp\tools\Writes;
 
 class UploadAsset extends AbstractTool
 {
-    use Serializes, Writes;
+    use Serializes, Writes, Reviews;
 
     private const MAX_BYTES = 20 * 1024 * 1024;
 
@@ -110,7 +111,15 @@ class UploadAsset extends AbstractTool
             }
         }
 
-        return $this->assetSummary($asset);
+        $result = $this->assetSummary($asset);
+        if ($this->reviewRequired()) {
+            $change = $this->review()->queue('asset_upload', $asset->id, null, (string)$asset->filename, null, ['filename' => $asset->filename, 'volume' => $volume->handle]);
+            $result += $this->pendingInfo(
+                $change,
+                'The file is uploaded but a human must approve it in the control panel (MCP → Freigaben); if it is rejected it is deleted again. You may reference the asset ID in drafts.'
+            );
+        }
+        return $result;
     }
 
     private function download(string $url): string

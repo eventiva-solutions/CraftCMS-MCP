@@ -36,6 +36,7 @@ class ProtocolService extends Component
                 read\ListAssetFolders::class,
                 read\ListTaxonomies::class,
                 read\SearchTerms::class,
+                read\ListMyChanges::class,
                 write\CreateEntry::class,
                 write\UpdateEntry::class,
                 write\CreateDraft::class,
@@ -119,7 +120,7 @@ class ProtocolService extends Component
     {
         $out = [];
         foreach ($this->tools() as $tool) {
-            if ($token->hasScope($tool->scope())) {
+            if ($token->hasScope($tool->scope()) && !($token->requireReview && !$tool->availableInReview())) {
                 $out[] = $tool->definition();
             }
         }
@@ -142,6 +143,12 @@ class ProtocolService extends Component
 
         if (!$token->hasScope($tool->scope())) {
             $msg = "Token lacks the '{$tool->scope()}' scope required for $name.";
+            $audit->log($token, $name, $args, false, $msg, $ms());
+            return $this->toolResult($msg, true);
+        }
+
+        if ($token->requireReview && !$tool->availableInReview()) {
+            $msg = "$name is not available for tokens that require approval: it cannot be reviewed before it takes effect. Use create_entry / update_entry (they create drafts for approval) instead.";
             $audit->log($token, $name, $args, false, $msg, $ms());
             return $this->toolResult($msg, true);
         }

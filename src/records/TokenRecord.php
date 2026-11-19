@@ -12,6 +12,7 @@ use craft\db\ActiveRecord;
  * @property int $userId
  * @property string $scopes Comma separated: read,write,delete
  * @property string|null $allowedSections JSON array of section handles (null = all)
+ * @property bool $requireReview Changes need human approval in the control panel
  * @property string|null $expiresAt
  * @property string|null $lastUsedAt
  */

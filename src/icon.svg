@@ -1,6 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <rect x="4" y="4" width="56" height="56" rx="12" fill="#e5422b"/>
-  <path d="M22 12v12m20-12v12" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
-  <path d="M16 24h32v8a16 16 0 0 1-32 0z" fill="#fff"/>
-  <path d="M32 48v6" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="MCP Server">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4f46e5"/>
+      <stop offset="1" stop-color="#0d9488"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" fill="url(#bg)"/>
+  <g fill="#ffffff">
+    <rect x="42" y="18" width="12" height="34" rx="6"/>
+    <rect x="74" y="18" width="12" height="34" rx="6"/>
+    <path d="M32 48h64v22a32 32 0 0 1-32 32 32 32 0 0 1-32-32z"/>
+    <rect x="60" y="98" width="8" height="20" rx="4"/>
+  </g>
+  <path d="M49 72l11 11 21-23" fill="none" stroke="#4f46e5" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

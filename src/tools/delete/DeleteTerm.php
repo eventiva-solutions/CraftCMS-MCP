@@ -5,11 +5,12 @@ namespace eventiva\mcp\tools\delete;
 use Craft;
 use eventiva\mcp\tools\AbstractTool;
 use eventiva\mcp\tools\TermHelper;
+use eventiva\mcp\tools\Reviews;
 use eventiva\mcp\tools\Writes;
 
 class DeleteTerm extends AbstractTool
 {
-    use TermHelper, Writes;
+    use TermHelper, Writes, Reviews;
 
     public function name(): string
     {
@@ -44,6 +45,12 @@ class DeleteTerm extends AbstractTool
             throw new \InvalidArgumentException("{$args['type']} {$args['id']} not found.");
         }
         $this->assertCanDelete($term);
+
+        if ($this->reviewRequired()) {
+            $change = $this->review()->findPending(['term_delete'], $term->id)
+                ?: $this->review()->queue('term_delete', $term->id, null, (string)$term->title, null, ['elementType' => $args['type'], 'group' => $term->getGroup()->handle]);
+            return $this->pendingInfo($change, 'Deletion was requested but NOT carried out. A human must approve it in the control panel (MCP → Freigaben). Use list_my_changes to see the decision.', ['deleted' => false, 'id' => (int)$args['id'], 'title' => $term->title]);
+        }
 
         if (!Craft::$app->getElements()->deleteElement($term)) {
             throw new \RuntimeException('Could not be deleted.');

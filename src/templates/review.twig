@@ -1,0 +1,163 @@
+{% extends '_layouts/cp' %}
+
+{% set title = 'MCP – Approvals'|t('mcp-server') %}
+
+{% css %}
+  .mcp-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .mcp-tabs a { padding: 6px 14px; border-radius: 6px; border: 1px solid var(--hairline-color, #ccd1d6); text-decoration: none; color: inherit; }
+  .mcp-tabs a.is-active { background: var(--primary-color, #e5422b); color: #fff; border-color: transparent; }
+  .mcp-bar { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 10px 14px; margin-bottom: 18px; background: var(--gray-050, #f3f7fc); border: 1px solid var(--hairline-color, #ccd1d6); border-radius: 8px; }
+  .mcp-bar .text { flex: 1 1 220px; min-width: 180px; }
+  .mcp-batch { margin: 28px 0 10px; font-size: 15px; display: flex; align-items: center; gap: 12px; }
+  .mcp-item { border: 1px solid var(--hairline-color, #ccd1d6); border-radius: 8px; margin-bottom: 14px; background: var(--white, #fff); overflow: hidden; }
+  .mcp-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 14px; background: var(--gray-050, #f3f7fc); }
+  .mcp-head .mcp-actions { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+  .mcp-head .mcp-actions .text { width: 190px; }
+  .mcp-type { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; padding: 2px 8px; border-radius: 10px; background: #e4ecf6; color: #1d3a5f; }
+  .mcp-type-entry_create { background: #dcf5e4; color: #0d5a2a; }
+  .mcp-type-entry_delete, .mcp-type-asset_delete, .mcp-type-term_delete { background: #fde1e1; color: #8c1d1d; }
+  .mcp-type-asset_upload { background: #fff1cc; color: #6b4b00; }
+  .mcp-body { padding: 12px 16px 6px; }
+  .mcp-warning { margin: 10px 16px 0; padding: 8px 12px; border-radius: 6px; background: #fff4d6; color: #5c4300; font-size: 13px; }
+  .mcp-detail { margin: 10px 16px 0; font-size: 13px; color: var(--light-text-color, #596673); }
+  .mcp-thumb { margin: 10px 16px 0; }
+  .mcp-thumb img { max-width: 240px; max-height: 160px; border-radius: 6px; border: 1px solid var(--hairline-color, #ccd1d6); }
+  .mcp-field { margin-bottom: 14px; }
+  .mcp-field > .mcp-label { font-size: 12px; font-weight: 600; color: var(--light-text-color, #596673); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .03em; }
+  .mcp-diff-text, .mcp-diff-old, .mcp-diff-new { white-space: pre-wrap; word-break: break-word; line-height: 1.5; }
+  .mcp-diff-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .mcp-diff-old { background: rgba(220, 53, 69, .10); padding: 6px 8px; border-radius: 4px; }
+  .mcp-diff-new { background: rgba(40, 167, 69, .12); padding: 6px 8px; border-radius: 4px; }
+  .mcp-body ins { background: rgba(40, 167, 69, .22); text-decoration: none; border-radius: 2px; }
+  .mcp-body del { background: rgba(220, 53, 69, .20); border-radius: 2px; }
+  .mcp-block { border-left: 3px solid var(--hairline-color, #ccd1d6); padding: 6px 0 6px 12px; margin: 8px 0; }
+  .mcp-block-new { border-left-color: #28a745; }
+  .mcp-block-changed { border-left-color: #e0a100; }
+  .mcp-block-removed { border-left-color: #dc3545; }
+  .mcp-block-same { opacity: .65; }
+  .mcp-tag { font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 9px; background: #e8ecf1; }
+  .mcp-tag-new { background: #dcf5e4; color: #0d5a2a; }
+  .mcp-tag-changed { background: #fff1cc; color: #6b4b00; }
+  .mcp-tag-removed { background: #fde1e1; color: #8c1d1d; }
+  .mcp-diff-field { margin: 6px 0 6px 4px; }
+  .mcp-diff-field > strong { font-size: 12px; color: var(--light-text-color, #596673); }
+  .mcp-status-approved { color: #0d7a3a; font-weight: 600; }
+  .mcp-status-rejected { color: #b3261e; font-weight: 600; }
+  .mcp-status-failed { color: #b3261e; font-weight: 600; }
+  @media (max-width: 700px) { .mcp-diff-pair { grid-template-columns: 1fr; } .mcp-head .mcp-actions { margin-left: 0; width: 100%; } }
+{% endcss %}
+
+{% js %}
+  (function () {
+    var all = document.getElementById('mcp-all');
+    if (all) {
+      all.addEventListener('change', function () {
+        document.querySelectorAll('.mcp-check').forEach(function (c) { c.checked = all.checked; });
+      });
+    }
+    var form = document.getElementById('mcp-review-form');
+    if (form) {
+      form.addEventListener('submit', function (e) {
+        var s = e.submitter;
+        if (!s || !s.dataset.confirm) { return; }
+        var n = form.querySelectorAll('.mcp-check:checked').length;
+        var text = s.dataset.confirm.replace('{n}', n);
+        if (n === 0) { return; }
+        if (!window.confirm(text)) { e.preventDefault(); }
+      });
+    }
+  })();
+{% endjs %}
+
+{% block content %}
+  <div class="mcp-tabs">
+    <a href="{{ url('mcp-server/review') }}" class="{{ mode == 'pending' ? 'is-active' }}">{{ 'Open'|t('mcp-server') }}{% if pendingCount %} ({{ pendingCount }}){% endif %}</a>
+    <a href="{{ url('mcp-server/review', {status: 'decided'}) }}" class="{{ mode == 'decided' ? 'is-active' }}">{{ 'Decided'|t('mcp-server') }}</a>
+  </div>
+
+  {% if mode == 'pending' %}
+    {% if not batches|length %}
+      <p class="light">{{ 'No open changes. Proposals from AI assistants appear here as soon as a token that requires approval changes something.'|t('mcp-server') }}</p>
+    {% else %}
+      <form method="post" id="mcp-review-form" accept-charset="UTF-8">
+        {{ csrfInput() }}
+        {{ actionInput('mcp-server/review/decide') }}
+        {# Enter inside a text field must never trigger a bulk action: this invisible no-op button is the first submit button. #}
+        <button type="submit" name="decision" value="none" hidden tabindex="-1" aria-hidden="true"></button>
+
+        <div class="mcp-bar">
+          <label><input type="checkbox" id="mcp-all"> {{ 'Select all'|t('mcp-server') }}</label>
+          <input type="text" class="text" name="note" placeholder="{{ 'Reason for rejecting (optional, applies to all selected)'|t('mcp-server') }}">
+          <button type="submit" class="btn submit" name="decision" value="approve" data-confirm="{{ 'Approve {n} selected change(s)? They go live or are carried out immediately.'|t('mcp-server') }}">{{ 'Approve selected'|t('mcp-server') }}</button>
+          <button type="submit" class="btn" name="decision" value="reject" data-confirm="{{ 'Reject {n} selected change(s)?'|t('mcp-server') }}">{{ 'Reject selected'|t('mcp-server') }}</button>
+        </div>
+
+        {% for batch, items in batches %}
+          <h2 class="mcp-batch">{{ batch }} <span class="light">· {{ '{count, plural, =1{1 change} other{# changes}}'|t('mcp-server', {count: items|length}) }}</span></h2>
+
+          {% for item in items %}
+            {% set c = item.change %}
+            {% set v = item.view %}
+            <div class="mcp-item">
+              <div class="mcp-head">
+                <input type="checkbox" class="mcp-check" name="ids[]" value="{{ c.id }}" aria-label="{{ 'Select'|t('mcp-server') }}">
+                <span class="mcp-type mcp-type-{{ c.type }}">{{ c.typeLabel() }}</span>
+                <strong>{{ v.title }}</strong>
+                {% if v.section %}<span class="light">{{ v.section }}</span>{% endif %}
+                {% if v.editUrl %}<a href="{{ v.editUrl }}" target="_blank" rel="noopener">{{ 'Open in control panel'|t('mcp-server') }}</a>{% endif %}
+                <span class="mcp-actions">
+                  <button type="submit" class="btn small submit" name="single" value="approve:{{ c.id }}">{{ 'Approve'|t('mcp-server') }}</button>
+                  <input type="text" class="text small" name="notes[{{ c.id }}]" placeholder="{{ 'Reason (optional)'|t('mcp-server') }}">
+                  <button type="submit" class="btn small" name="single" value="reject:{{ c.id }}">{{ 'Reject'|t('mcp-server') }}</button>
+                </span>
+              </div>
+
+              {% for w in v.warnings %}<div class="mcp-warning">⚠ {{ w }}</div>{% endfor %}
+              {% if v.thumb %}<div class="mcp-thumb"><img src="{{ v.thumb }}" alt=""></div>{% endif %}
+              {% for d in v.details %}<div class="mcp-detail">{{ d }}</div>{% endfor %}
+
+              {% if v.rows|length %}
+                <div class="mcp-body">
+                  {% for row in v.rows %}
+                    <div class="mcp-field">
+                      <div class="mcp-label">{{ row.label }}</div>
+                      {{ row.html|raw }}
+                    </div>
+                  {% endfor %}
+                </div>
+              {% elseif c.type in ['entry_create', 'entry_update'] and not v.warnings|length %}
+                <div class="mcp-detail">{{ 'No substantive differences from the live version were detected.'|t('mcp-server') }}</div>
+              {% endif %}
+              <div style="height: 10px"></div>
+            </div>
+          {% endfor %}
+        {% endfor %}
+      </form>
+    {% endif %}
+
+  {% else %}
+    {% if not batches|length %}
+      <p class="light">{{ 'Nothing decided yet.'|t('mcp-server') }}</p>
+    {% else %}
+      <table class="data fullwidth">
+        <thead><tr><th>{{ 'Decided'|t('mcp-server') }}</th><th>{{ 'By'|t('mcp-server') }}</th><th>{{ 'Type'|t('mcp-server') }}</th><th>{{ 'Title'|t('mcp-server') }}</th><th>{{ 'Source'|t('mcp-server') }}</th><th>{{ 'Result'|t('mcp-server') }}</th><th>{{ 'Reason / note'|t('mcp-server') }}</th></tr></thead>
+        <tbody>
+          {% for batch, items in batches %}
+            {% for item in items %}
+              {% set c = item.change %}
+              <tr>
+                <td>{{ c.decidedAt ? c.decidedAt|date('short') ~ ' ' ~ c.decidedAt|time('short') : '–' }}</td>
+                <td>{{ users[c.decidedBy] ?? '–' }}</td>
+                <td>{{ c.typeLabel() }}</td>
+                <td>{{ c.label }}{% if c.section %} <span class="light">({{ c.section }})</span>{% endif %}</td>
+                <td class="light">{{ c.tokenName ?? '–' }}</td>
+                <td class="mcp-status-{{ c.status }}">{% if c.status == 'approved' %}{{ 'Approved'|t('mcp-server') }}{% elseif c.status == 'rejected' %}{{ 'Rejected'|t('mcp-server') }}{% elseif c.status == 'failed' %}{{ 'Failed'|t('mcp-server') }}{% else %}{{ c.status }}{% endif %}</td>
+                <td>{{ c.note }}</td>
+              </tr>
+            {% endfor %}
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  {% endif %}
+{% endblock %}

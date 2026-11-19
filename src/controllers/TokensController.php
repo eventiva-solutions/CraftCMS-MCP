@@ -40,6 +40,7 @@ class TokensController extends Controller
         return $this->renderTemplate('mcp-server/tokens', [
             'tokens' => $mcp->tokens->all(),
             'users' => $users,
+            'userNames' => array_column($users, 'label', 'value'),
             'sections' => $sections,
             'endpoint' => UrlHelper::siteUrl('mcp'),
             'newToken' => Craft::$app->getSession()->getFlash('mcpNewToken'),
@@ -54,7 +55,7 @@ class TokensController extends Controller
         $name = trim((string)$request->getBodyParam('name'));
         $userId = (int)$request->getBodyParam('userId');
         if ($name === '' || !$userId) {
-            $this->setFailFlash('Name und Benutzer sind erforderlich.');
+            $this->setFailFlash(Craft::t('mcp-server', 'Name and user are required.'));
             return $this->redirectToPostedUrl();
         }
 
@@ -71,7 +72,9 @@ class TokensController extends Controller
             }
         }
 
-        [, $plain] = Mcp::getInstance()->tokens->create($name, $userId, $scopes, $expiresAt, $sections ?: null);
+        $requireReview = filter_var($request->getBodyParam('requireReview'), FILTER_VALIDATE_BOOLEAN);
+
+        [, $plain] = Mcp::getInstance()->tokens->create($name, $userId, $scopes, $expiresAt, $sections ?: null, $requireReview);
 
         Craft::$app->getSession()->setFlash('mcpNewToken', $plain);
         return $this->redirect('mcp-server/tokens');
@@ -81,7 +84,7 @@ class TokensController extends Controller
     {
         $this->requirePostRequest();
         Mcp::getInstance()->tokens->revoke((int)Craft::$app->getRequest()->getRequiredBodyParam('id'));
-        $this->setSuccessFlash('Token widerrufen.');
+        $this->setSuccessFlash(Craft::t('mcp-server', 'Token revoked.'));
         return $this->redirect('mcp-server/tokens');
     }
 

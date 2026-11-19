@@ -6,11 +6,12 @@ use Craft;
 use craft\elements\Entry;
 use eventiva\mcp\tools\AbstractTool;
 use eventiva\mcp\tools\Serializes;
+use eventiva\mcp\tools\Reviews;
 use eventiva\mcp\tools\Writes;
 
 class CreateDraft extends AbstractTool
 {
-    use Serializes, Writes;
+    use Serializes, Writes, Reviews;
 
     public function name(): string
     {
@@ -56,8 +57,13 @@ class CreateDraft extends AbstractTool
         }
         $this->assertCanSave($entry);
 
-        /** @var Entry $draft */
-        $draft = Craft::$app->getDrafts()->createDraft($entry, $this->user()->id, $args['name'] ?? 'MCP draft', 'Created via MCP');
+        $existingChange = null;
+        if ($this->reviewRequired()) {
+            [$draft, $existingChange] = $this->resolveReviewDraft($entry);
+        } else {
+            /** @var Entry $draft */
+            $draft = Craft::$app->getDrafts()->createDraft($entry, $this->user()->id, $args['name'] ?? 'MCP draft', 'Created via MCP');
+        }
 
         $changed = false;
         if (array_key_exists('title', $args)) {
@@ -76,6 +82,11 @@ class CreateDraft extends AbstractTool
             $this->saveOrFail($draft);
         }
 
-        return $this->entrySummary($draft) + ['draftElementId' => $draft->id] + $this->writeExtras($draft);
+        $result = $this->entrySummary($draft) + ['draftElementId' => $draft->id] + $this->writeExtras($draft);
+        if ($this->reviewRequired()) {
+            $change = $this->registerReviewChange($draft, $existingChange, $entry);
+            $result += $this->pendingInfo($change, 'The draft is NOT live. A human must approve it in the control panel (MCP → Freigaben). Use list_my_changes to see the decision.');
+        }
+        return $result;
     }
 }

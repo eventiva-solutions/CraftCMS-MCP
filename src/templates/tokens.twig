@@ -1,49 +1,60 @@
 {% extends '_layouts/cp' %}
 {% import '_includes/forms' as forms %}
 
-{% set title = 'MCP – Tokens' %}
+{% set title = 'MCP – Tokens'|t('mcp-server') %}
 
 {% block content %}
   {% if newToken %}
     <div class="readable" style="margin-bottom:24px">
       <div class="pane" style="border:2px solid #0b69a3">
-        <h2>Neuer Token – jetzt kopieren</h2>
-        <p>Dieser Token wird nur <strong>einmal</strong> angezeigt und ist danach nicht mehr abrufbar.</p>
-        <pre class="code" style="user-select:all;white-space:pre-wrap;word-break:break-all">{{ newToken }}</pre>
+        <h2>{{ 'New token – copy it now'|t('mcp-server') }}</h2>
+        <p>{{ 'This token is shown only once and cannot be retrieved afterwards.'|t('mcp-server') }}</p>
+        <pre class="code mcp-secret" style="user-select:all;white-space:pre-wrap;word-break:break-all">{{ newToken }}</pre>
         <p><strong>Claude Code:</strong></p>
-        <pre class="code" style="user-select:all;white-space:pre-wrap;word-break:break-all">claude mcp add --transport http craft {{ endpoint }} --header "Authorization: Bearer {{ newToken }}"</pre>
+        <pre class="code mcp-secret" style="user-select:all;white-space:pre-wrap;word-break:break-all">claude mcp add --transport http craft {{ endpoint }} --header "Authorization: Bearer {{ newToken }}"</pre>
         <p><strong>Codex</strong> (<code>~/.codex/config.toml</code>):</p>
-        <pre class="code" style="user-select:all;white-space:pre-wrap;word-break:break-all">[mcp_servers.craft]
+        <pre class="code mcp-secret" style="user-select:all;white-space:pre-wrap;word-break:break-all">[mcp_servers.craft]
 url = "{{ endpoint }}"
 http_headers = { Authorization = "Bearer {{ newToken }}" }</pre>
       </div>
     </div>
   {% endif %}
 
-  <p>Endpoint: <code>{{ endpoint }}</code> (POST, <code>Authorization: Bearer …</code>)</p>
+  <p>{{ 'Endpoint'|t('mcp-server') }}: <code>{{ endpoint }}</code> (POST, <code>Authorization: Bearer …</code>)</p>
 
-  <h2>Tokens</h2>
+  <h2>{{ 'Tokens'|t('mcp-server') }}</h2>
   {% if tokens|length %}
     <table class="data fullwidth">
       <thead>
-        <tr><th>Name</th><th>Präfix</th><th>Benutzer-ID</th><th>Rechte</th><th>Sections</th><th>Läuft ab</th><th>Zuletzt genutzt</th><th></th></tr>
+        <tr>
+          <th>{{ 'Name'|t('mcp-server') }}</th>
+          <th>{{ 'Prefix'|t('mcp-server') }}</th>
+          <th>{{ 'User'|t('mcp-server') }}</th>
+          <th>{{ 'Scopes'|t('mcp-server') }}</th>
+          <th>{{ 'Approval'|t('mcp-server') }}</th>
+          <th>{{ 'Sections'|t('mcp-server') }}</th>
+          <th>{{ 'Expires'|t('mcp-server') }}</th>
+          <th>{{ 'Last used'|t('mcp-server') }}</th>
+          <th></th>
+        </tr>
       </thead>
       <tbody>
         {% for t in tokens %}
           <tr>
             <td>{{ t.name }}</td>
             <td><code>{{ t.tokenPrefix }}…</code></td>
-            <td>{{ t.userId }}</td>
+            <td>{{ userNames[t.userId] ?? t.userId }}</td>
             <td>{{ t.scopes }}</td>
-            <td>{{ t.allowedSectionList ? t.allowedSectionList|join(', ') : 'alle' }}</td>
-            <td>{{ t.expiresAt ? t.expiresAt|date('d.m.Y') : '–' }}</td>
-            <td>{{ t.lastUsedAt ? t.lastUsedAt|date('d.m.Y H:i') : '–' }}</td>
+            <td>{{ t.requireReview ? 'required'|t('mcp-server') : '–' }}</td>
+            <td>{{ t.allowedSectionList ? t.allowedSectionList|join(', ') : 'all'|t('mcp-server') }}</td>
+            <td>{{ t.expiresAt ? t.expiresAt|date('short') : '–' }}</td>
+            <td>{{ t.lastUsedAt ? t.lastUsedAt|date('short') ~ ' ' ~ t.lastUsedAt|time('short') : '–' }}</td>
             <td>
-              <form method="post" onsubmit="return confirm('Token wirklich widerrufen?')">
+              <form method="post" onsubmit="return confirm({{ 'Really revoke this token?'|t('mcp-server')|json_encode|raw }})">
                 {{ csrfInput() }}
                 {{ actionInput('mcp-server/tokens/revoke') }}
                 <input type="hidden" name="id" value="{{ t.id }}">
-                <button class="btn small" type="submit">Widerrufen</button>
+                <button class="btn small" type="submit">{{ 'Revoke'|t('mcp-server') }}</button>
               </form>
             </td>
           </tr>
@@ -51,42 +62,54 @@ http_headers = { Authorization = "Bearer {{ newToken }}" }</pre>
       </tbody>
     </table>
   {% else %}
-    <p class="light">Noch keine Tokens angelegt.</p>
+    <p class="light">{{ 'No tokens yet.'|t('mcp-server') }}</p>
   {% endif %}
 
   <hr>
-  <h2>Neuen Token anlegen</h2>
+  <h2>{{ 'Create a new token'|t('mcp-server') }}</h2>
   <form method="post" accept-charset="UTF-8">
     {{ csrfInput() }}
     {{ actionInput('mcp-server/tokens/create') }}
 
-    {{ forms.textField({ label: 'Name', instructions: 'z. B. „Claude – Redaktion“', name: 'name', required: true }) }}
+    {{ forms.textField({
+      label: 'Name'|t('mcp-server'),
+      instructions: 'For example “Claude – Editorial”'|t('mcp-server'),
+      name: 'name',
+      required: true
+    }) }}
 
     {{ forms.selectField({
-      label: 'Craft-Benutzer',
-      instructions: 'Alle Aktionen laufen mit den Rechten dieses Benutzers. Empfehlung: eigener Benutzer mit minimalen Rechten.',
+      label: 'Craft user'|t('mcp-server'),
+      instructions: 'All actions run with the permissions of this user. Recommendation: a dedicated user with minimal permissions.'|t('mcp-server'),
       name: 'userId', options: users, required: true
     }) }}
 
     {{ forms.checkboxGroupField({
-      label: 'Rechte',
-      instructions: 'Lesen ist immer aktiv. Löschen bewusst nur bei Bedarf aktivieren.',
+      label: 'Scopes'|t('mcp-server'),
+      instructions: 'Read is always on. Only enable delete when you really need it.'|t('mcp-server'),
       name: 'scopes',
       options: [
-        { label: 'write – Einträge/Assets anlegen und ändern', value: 'write' },
-        { label: 'delete – Einträge/Assets löschen', value: 'delete' },
+        { label: 'write – create and edit entries and assets'|t('mcp-server'), value: 'write' },
+        { label: 'delete – delete entries and assets'|t('mcp-server'), value: 'delete' },
       ],
     }) }}
 
     {{ forms.checkboxGroupField({
-      label: 'Sections einschränken',
-      instructions: 'Nichts ausgewählt = alle Sections.',
+      label: 'Limit to sections'|t('mcp-server'),
+      instructions: 'Nothing selected = all sections.'|t('mcp-server'),
       name: 'allowedSections',
       options: sections,
     }) }}
 
-    {{ forms.dateField({ label: 'Ablaufdatum (optional)', name: 'expiresAt' }) }}
+    {{ forms.lightswitchField({
+      label: 'Require approval (recommended)'|t('mcp-server'),
+      instructions: 'Changes made with this token do not go live directly. They appear under “Approvals” and must be confirmed by a person. New entries and changes are saved as drafts, deletions are only requested. Changing assets and creating folders, categories or tags is blocked.'|t('mcp-server'),
+      name: 'requireReview',
+      on: true
+    }) }}
 
-    <button class="btn submit" type="submit">Token erstellen</button>
+    {{ forms.dateField({ label: 'Expiry date (optional)'|t('mcp-server'), name: 'expiresAt' }) }}
+
+    <button class="btn submit" type="submit">{{ 'Create token'|t('mcp-server') }}</button>
   </form>
 {% endblock %}

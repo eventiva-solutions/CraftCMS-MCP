@@ -1,39 +1,29 @@
 # Release Notes for MCP Server
 
-## 0.5.1 - 2026-11-19
-- **Safety:** boolean arguments sent as strings are now interpreted correctly. `enabled: "false"` used to become `true` (and could publish an entry); the same applies to `allowBlockRemoval` and block `enabled`.
-- Arrays and objects sent as JSON strings are accepted for `fields` (also Matrix values and block fields); `get_entry` accepts `fields` as an array, a JSON string, a comma separated list or a single handle (the filter was silently ignored for strings before)
-- Write responses contain `warnings` when a new Matrix block leaves a required field empty (Craft only enforces required fields once the entry is enabled)
+## 1.0.0 - 2026-11-19
 
-## 0.5.0 - 2026-11-19
-- **Matrix safety:** unknown block types, unknown field handles in blocks and unknown block IDs are rejected with the list of allowed values (Craft silently drops them). Updates that would delete existing blocks are refused unless `allowBlockRemoval=true`; `{"mode": "append"}` adds blocks without touching existing ones. Nested Matrix fields are validated as well.
-- `get_entry_type` lists block types (and their fields) of Matrix fields and adds a `valueFormat` hint to fields (e.g. "HTML string (rich text)", "array of element IDs")
-- `get_entry` and `update_entry` accept the `draftElementId` of a draft; entry summaries show `isDraft` / `canonicalId`
-- Write responses include the resulting block count per Matrix field
+First release.
 
-## 0.4.0 - 2026-11-19
-- Added Craft License (`LICENSE.md`), English `README.md`, `SECURITY.md` and Plugin Store texts (`docs/store-listing.md`)
-- Added unit tests (tool catalogue, scopes, schemas) and an end-to-end smoke test script
+### MCP server
+- Streamable-HTTP MCP endpoint at `/mcp`, authenticated with bearer tokens (`Authorization: Bearer …` or `X-Mcp-Token`)
+- 24 tools: search and read entries, assets, categories, tags, sections and entry types; create and update entries and drafts; upload and organize assets; manage categories and tags; delete (soft delete)
+- Sections, entry types, fields, plugins, users and system settings are **not** exposed
 
-## 0.3.1 - 2026-11-19
-- Fix: `get_entry_type` with a handle failed on Craft 5.11 (`getIsTranslatable()` needs an argument)
-- Content created or changed through MCP is indexed for search immediately (no queue run needed)
-- `get_entry`: new `fields` parameter; big SEO bundles (e.g. SEOmatic) are shortened by default
-- `search_entries` no longer returns nested (Matrix) entries
-- `update_asset`: an empty alt text resets the value to `null`
+### Approval workflow
+- Tokens can **require approval**: changes become drafts, new entries are unpublished drafts, deletions are only requested, uploads are listed for review
+- **MCP → Approvals** control panel page: word-level before/after view, Matrix blocks marked new/changed/removed, approve or reject individually or in bulk, rejection reasons, conflict warning, decision history, open-count badge
+- Permission “Approve or reject changes made by the MCP Server” for non-admin editors
+- `list_my_changes` lets the assistant see decisions and rejection reasons
 
-## 0.3.0 - 2026-11-19
-- Plugin handle is now `mcp-server`, tables are `mcpserver_tokens` / `mcpserver_audit` (no clash with `stimmt/craft-mcp`)
-- Fix: `update_asset` failed when only changing metadata; rename/move now uses the Assets service
-- Fix: rate limit is atomic (mutex), parallel requests can no longer bypass it
-- Token expiry is set to the end of the chosen day
-- Tested against Craft 5.11 / PHP 8.4 / MariaDB 11.4
+### Safety
+- Scoped tokens (`read`, `write`, `delete`), optional section restriction, expiry date, tokens stored as hashes, shown once
+- All actions run with the Craft permissions of the token's user
+- Matrix safety: unknown block types, unknown fields and unknown block IDs are rejected; updates that would delete existing blocks are refused unless confirmed; `append` mode; nested Matrix fields are validated
+- Robust argument handling: booleans and JSON values sent as strings are interpreted correctly (`"false"` is false)
+- Warnings for empty required fields in new Matrix blocks
+- Audit log, rate limit (120 requests/minute/token), SSRF protection and size limit for URL uploads
 
-## 0.2.0
-- Write tools: entries, drafts, assets (upload by URL/base64), asset folders, categories/tags
-- Delete tools (scope `delete`)
-- Rate limit per token, SSRF protection for URL uploads
-
-## 0.1.0
-- Initial scaffold: Streamable-HTTP endpoint `/mcp`, scoped tokens, audit log
-- Read tools: sites, sections, entry types, entries, volumes, assets
+### Content workflow
+- Drafts can be created, read, edited and published; new content is searchable immediately
+- `get_entry_type` describes fields with value formats and Matrix block types; `get_entry` can return selected fields only
+- Control panel in English with a German translation

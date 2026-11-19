@@ -20,7 +20,7 @@ class TokenService extends Component
      * @param string[]|null $allowedSections
      * @return array{0: TokenRecord, 1: string}
      */
-    public function create(string $name, int $userId, array $scopes, ?\DateTime $expiresAt = null, ?array $allowedSections = null): array
+    public function create(string $name, int $userId, array $scopes, ?\DateTime $expiresAt = null, ?array $allowedSections = null, bool $requireReview = false): array
     {
         $scopes = array_values(array_intersect(self::SCOPES, array_unique(array_merge(['read'], $scopes))));
         $plain = 'cmcp_' . bin2hex(random_bytes(32));
@@ -32,6 +32,7 @@ class TokenService extends Component
         $record->userId = $userId;
         $record->scopes = implode(',', $scopes);
         $record->allowedSections = $allowedSections ? json_encode(array_values($allowedSections)) : null;
+        $record->requireReview = $requireReview;
         $record->expiresAt = $expiresAt ? Db::prepareDateForDb($expiresAt) : null;
         $record->save(false);
 

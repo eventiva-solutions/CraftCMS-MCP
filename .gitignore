@@ -1,3 +1,31 @@
+# IDE and OS
 .idea/
-vendor/
+.vscode/
 .DS_Store
+Thumbs.db
+
+# AI assistant files (never ship these)
+CLAUDE.md
+CLAUDE.local.md
+AGENTS.md
+.claude/
+.cursor/
+.codex/
+
+# Secrets and local config
+.env
+.env.*
+*.local
+*.pem
+*.key
+
+# Dependencies and tooling output
+/vendor/
+/node_modules/
+composer.lock
+.phpunit.result.cache
+.phpunit.cache/
+
+# Local test artifacts
+/storage/
+*.log

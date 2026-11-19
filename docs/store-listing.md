@@ -17,11 +17,19 @@ AI, Content management, Developer tools · mcp, model context protocol, ai, llm,
 
 ## Description
 
-**Let your AI assistant do the content work – without giving it the keys to your site.**
+**Let AI propose. You approve.**
+
+With **Require approval** switched on, your AI assistant can only prepare changes. Nothing goes live until a person has read the before/after view and clicked *Approve*.
 
 MCP Server connects Craft CMS to AI assistants such as Claude and Codex through the open Model Context Protocol (MCP). Ask your assistant to find entries, rewrite texts, create drafts, upload images with alt text or tidy up categories and tags – and let it work directly in Craft.
 
 Unlike a plain database or console bridge, MCP Server is built for **content**, and keeps your configuration out of reach: sections, fields, entry types, plugins, users and system settings cannot be changed through it.
+
+### The approval inbox
+- **Before/after view** for every proposal: word-level text diff, Matrix blocks marked as new, changed or removed.
+- **Approve or reject** one proposal, or tick several and decide in bulk. A rejection can carry a reason that the assistant reads and learns from.
+- Enforced by the server, not by trust: changes become drafts, deletions are only requested, uploads are listed for review.
+- A history of every decision and a full audit log.
 
 ### What your assistant can do
 - **Find and read:** full-text search over entries, assets, categories and tags; read sections, entry types and field definitions so the assistant knows how your content is built.
@@ -44,7 +52,8 @@ Unlike a plain database or console bridge, MCP Server is built for **content**, 
 Connect Claude Code (and other MCP clients that support HTTP servers with an Authorization header) with a single command that the plugin shows you right after you create a token. The plugin can be installed next to other MCP plugins.
 
 ### Good to know
-- Authentication is by bearer token; there is no OAuth login flow yet.
+- Authentication is by bearer token (an Authorization header); there is no OAuth login flow yet, so connectors that only support OAuth (for example Claude on the web) cannot connect.
+- The control panel is in English with a German translation.
 - Search uses Craft's search index; content created through MCP is indexed immediately.
 - Tested with Craft 5.11 and PHP 8.4 on MariaDB 11.4.
 
@@ -85,7 +94,7 @@ Yes, it has its own handle (`mcp-server`), tables and routes.
 5. The **created entry** in the control panel.
 
 ## Release notes (first release)
-First release: MCP endpoint with scoped tokens, 23 tools for content, assets, categories and tags, audit log, rate limiting.
+First release: MCP endpoint with scoped tokens, 24 tools for content, assets, categories and tags, audit log, rate limiting.
 
 ## Support text
 For questions and bug reports, please open an issue at https://github.com/eventiva-solutions/CraftCMS-MCP/issues.

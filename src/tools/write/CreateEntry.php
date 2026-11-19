@@ -6,11 +6,12 @@ use Craft;
 use craft\elements\Entry;
 use eventiva\mcp\tools\AbstractTool;
 use eventiva\mcp\tools\Serializes;
+use eventiva\mcp\tools\Reviews;
 use eventiva\mcp\tools\Writes;
 
 class CreateEntry extends AbstractTool
 {
-    use Serializes, Writes;
+    use Serializes, Writes, Reviews;
 
     public function name(): string
     {
@@ -97,6 +98,24 @@ class CreateEntry extends AbstractTool
         $this->applyFields($entry, $args['fields'] ?? null);
 
         $this->assertCanSave($entry);
+
+        if ($this->reviewRequired()) {
+            // Saved as an unpublished draft; it becomes a real entry only after a human approves it.
+            if (!Craft::$app->getDrafts()->saveElementAsDraft($entry, $this->user()->id, 'MCP: ' . mb_strimwidth((string)$entry->title, 0, 60, '…'), 'Created via MCP, waiting for approval')) {
+                $errors = [];
+                foreach ($entry->getErrors() as $attr => $messages) {
+                    $errors[] = $attr . ': ' . implode(' ', $messages);
+                }
+                throw new \RuntimeException('Saving failed – ' . ($errors ? implode(' | ', $errors) : 'unknown error'));
+            }
+            $change = $this->registerReviewChange($entry, null, null);
+            return $this->entrySummary($entry) + $this->writeExtras($entry) + $this->pendingInfo(
+                $change,
+                'The entry was saved as a draft and is NOT live. A human must approve it in the control panel (MCP → Freigaben). Use list_my_changes to see the decision.',
+                ['draftElementId' => $entry->id]
+            );
+        }
+
         $this->saveOrFail($entry);
 
         return $this->entrySummary($entry) + $this->writeExtras($entry);

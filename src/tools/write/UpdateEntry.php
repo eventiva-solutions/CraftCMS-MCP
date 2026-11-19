@@ -5,11 +5,12 @@ namespace eventiva\mcp\tools\write;
 use craft\elements\Entry;
 use eventiva\mcp\tools\AbstractTool;
 use eventiva\mcp\tools\Serializes;
+use eventiva\mcp\tools\Reviews;
 use eventiva\mcp\tools\Writes;
 
 class UpdateEntry extends AbstractTool
 {
-    use Serializes, Writes;
+    use Serializes, Writes, Reviews;
 
     public function name(): string
     {
@@ -61,6 +62,15 @@ class UpdateEntry extends AbstractTool
             $this->assertSectionAllowed($section->handle);
         }
 
+        // With a review token the change goes into a draft; the live entry is never touched.
+        $canonical = null;
+        $existingChange = null;
+        if ($this->reviewRequired()) {
+            $this->assertCanSave($entry);
+            $canonical = $entry->getIsDraft() ? null : $entry;
+            [$entry, $existingChange] = $this->resolveReviewDraft($entry);
+        }
+
         if (array_key_exists('title', $args)) {
             $entry->title = (string)$args['title'];
         }
@@ -80,6 +90,15 @@ class UpdateEntry extends AbstractTool
 
         $this->assertCanSave($entry);
         $this->saveOrFail($entry);
+
+        if ($this->reviewRequired()) {
+            $change = $this->registerReviewChange($entry, $existingChange, $canonical);
+            return $this->entrySummary($entry) + $this->writeExtras($entry) + $this->pendingInfo(
+                $change,
+                'The change was saved in a draft and is NOT live. A human must approve it in the control panel (MCP → Freigaben). Use list_my_changes to see the decision; keep editing the draft with its draftElementId.',
+                ['draftElementId' => $entry->id]
+            );
+        }
 
         return $this->entrySummary($entry) + $this->writeExtras($entry);
     }

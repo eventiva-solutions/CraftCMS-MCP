@@ -5,11 +5,12 @@ namespace eventiva\mcp\tools\delete;
 use Craft;
 use craft\elements\Entry;
 use eventiva\mcp\tools\AbstractTool;
+use eventiva\mcp\tools\Reviews;
 use eventiva\mcp\tools\Writes;
 
 class DeleteEntry extends AbstractTool
 {
-    use Writes;
+    use Writes, Reviews;
 
     public function name(): string
     {
@@ -43,10 +44,17 @@ class DeleteEntry extends AbstractTool
         if (!$entry) {
             throw new \InvalidArgumentException("Entry {$args['id']} not found.");
         }
-        if ($section = $entry->getSection()) {
+        $section = $entry->getSection();
+        if ($section) {
             $this->assertSectionAllowed($section->handle);
         }
         $this->assertCanDelete($entry);
+
+        if ($this->reviewRequired()) {
+            $change = $this->review()->findPending(['entry_delete'], $entry->id)
+                ?: $this->review()->queue('entry_delete', $entry->id, null, (string)$entry->title, $section?->handle, ['section' => $section?->handle]);
+            return $this->pendingInfo($change, 'Deletion was requested but NOT carried out. A human must approve it in the control panel (MCP → Freigaben). Use list_my_changes to see the decision.', ['deleted' => false, 'id' => (int)$args['id'], 'title' => $entry->title]);
+        }
 
         if (!Craft::$app->getElements()->deleteElement($entry)) {
             throw new \RuntimeException('Entry could not be deleted.');
