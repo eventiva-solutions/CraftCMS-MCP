@@ -12,10 +12,9 @@
         <pre class="code mcp-secret" style="user-select:all;white-space:pre-wrap;word-break:break-all">{{ newToken }}</pre>
         <p><strong>Claude Code:</strong></p>
         <pre class="code mcp-secret" style="user-select:all;white-space:pre-wrap;word-break:break-all">claude mcp add --transport http craft {{ endpoint }} --header "Authorization: Bearer {{ newToken }}"</pre>
-        <p><strong>Codex</strong> (<code>~/.codex/config.toml</code>):</p>
-        <pre class="code mcp-secret" style="user-select:all;white-space:pre-wrap;word-break:break-all">[mcp_servers.craft]
-url = "{{ endpoint }}"
-http_headers = { Authorization = "Bearer {{ newToken }}" }</pre>
+        <p><strong>Codex:</strong></p>
+        <pre class="code mcp-secret" style="user-select:all;white-space:pre-wrap;word-break:break-all">$env:CRAFT_MCP_TOKEN = "{{ newToken }}"   # macOS/Linux: export CRAFT_MCP_TOKEN={{ newToken }}
+codex mcp add craft --url {{ endpoint }} --bearer-token-env-var CRAFT_MCP_TOKEN</pre>
       </div>
     </div>
   {% endif %}

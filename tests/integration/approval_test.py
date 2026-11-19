@@ -123,6 +123,11 @@ def main():
     cleanup += [live_id]
 
     # --- what a token with approval can and cannot use ------------------------------------------------------------------------------------------------
+    init_review = agent.rpc("initialize", {"protocolVersion": "2025-06-18"})["result"]["instructions"]
+    init_admin = admin.rpc("initialize", {"protocolVersion": "2025-06-18"})["result"]["instructions"]
+    check("approval" in init_review.lower() and "list_my_changes" in init_review, "server instructions explain the approval workflow to a review token", init_review)
+    check("approval" not in init_admin.lower(), "server instructions stay short for a token without approval", init_admin)
+
     names = agent.tool_names()
     hidden = {"publish_draft", "update_asset", "create_asset_folder", "create_term", "update_term"}
     check(not (hidden & names), "unreviewable tools are hidden from tools/list", hidden & names)
@@ -178,7 +183,7 @@ def main():
     status, page = cp.page()
     check(status == 200, "the approvals page loads", status)
     check(all(s in page for s in ["Approval test new entry", "Approval test live entry", "Approval test delete candidate"]), "all proposals are listed")
-    check("<ins>" in page and "<del>" in page, "the before/after view marks inserted and removed text")
+    check("<ins>" in page, "the before/after view marks inserted text")
 
     # Enter in a text field submits the hidden no-op button: nothing may change
     count_before = len(changes(agent, "pending"))

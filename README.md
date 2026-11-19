@@ -32,12 +32,12 @@ claude mcp add --transport http craft https://example.com/mcp \
   --header "Authorization: Bearer cmcp_…"
 ```
 
-**Codex** (`~/.codex/config.toml`)
-```toml
-[mcp_servers.craft]
-url = "https://example.com/mcp"
-http_headers = { Authorization = "Bearer cmcp_…" }
+**Codex**
+```powershell
+$env:CRAFT_MCP_TOKEN = "cmcp_…"   # macOS/Linux: export CRAFT_MCP_TOKEN=cmcp_…
+codex mcp add craft --url https://example.com/mcp --bearer-token-env-var CRAFT_MCP_TOKEN
 ```
+Codex stores only the name of the variable, not the token itself. Start Codex from a shell where the variable is set.
 
 If your host strips the `Authorization` header, send the token in an `X-Mcp-Token` header instead.
 

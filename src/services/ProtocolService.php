@@ -75,7 +75,7 @@ class ProtocolService extends Component
 
         try {
             $result = match ($message['method']) {
-                'initialize' => $this->initialize($params),
+                'initialize' => $this->initialize($params, $token),
                 'ping' => new \stdClass(),
                 'tools/list' => $this->listTools($token),
                 'tools/call' => $this->callTool($params, $token),
@@ -99,7 +99,7 @@ class ProtocolService extends Component
         return ['jsonrpc' => '2.0', 'id' => $id, 'result' => $result];
     }
 
-    private function initialize(array $params): array
+    private function initialize(array $params, TokenRecord $token): array
     {
         $requested = $params['protocolVersion'] ?? null;
         $version = in_array($requested, self::SUPPORTED_VERSIONS, true) ? $requested : self::SUPPORTED_VERSIONS[0];
@@ -112,7 +112,10 @@ class ProtocolService extends Component
                 'title' => 'Craft CMS MCP',
                 'version' => Mcp::getInstance()->getVersion(),
             ],
-            'instructions' => 'Manage content of a Craft CMS site. Start with list_sections and get_entry_type to learn the structure and field handles, then search_entries / get_entry. Sections, fields and system settings are read-only or unavailable.',
+            'instructions' => 'Manage content of a Craft CMS site. Start with list_sections and get_entry_type to learn the structure and field handles, then search_entries / get_entry. Sections, fields and system settings are read-only or unavailable.'
+                . ($token->requireReview
+                    ? ' Your token requires human approval: create_entry, update_entry, delete_* and upload_asset never change live content directly. They save a draft or a request that a person reviews in the control panel. Check decisions and rejection reasons with list_my_changes and revise rejected work; if a reason is vague, ask the user instead of guessing.'
+                    : ''),
         ];
     }
 

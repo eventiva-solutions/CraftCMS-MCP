@@ -1,5 +1,10 @@
 # Release Notes for MCP Server
 
+## 1.0.2 - 2026-11-20
+
+- The connect instructions for **Codex** now show the tested setup (`codex mcp add … --bearer-token-env-var`): the token is kept in an environment variable instead of the Codex configuration file
+- The server instructions sent to the AI client explain the approval workflow when the token requires approval, including to ask when a rejection reason is vague
+
 ## 1.0.1 - 2026-11-19
 
 - Clearer before/after view in **MCP → Approvals**: words and punctuation are compared separately, heavily rewritten text is shown as old and new side by side instead of many tiny changes, and HTML entities are decoded
