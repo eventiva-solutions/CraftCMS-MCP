@@ -80,7 +80,7 @@ class ReviewService extends Component
         if ($last && $last->batch) {
             return $last->batch;
         }
-        return ($tokenName ?: 'MCP') . ' · ' . date('d.m.Y H:i');
+        return ($tokenName ?: 'MCP') . ' · ' . date('Y-m-d H:i');
     }
 
     // -- listing --------------------------------------------------------------------------

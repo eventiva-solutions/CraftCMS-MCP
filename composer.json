@@ -37,7 +37,7 @@
   "extra": {
     "handle": "mcp-server",
     "name": "MCP Server",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "schemaVersion": "1.0.0",
     "developer": "Eventiva",
     "developerUrl": "https://eventiva.io",

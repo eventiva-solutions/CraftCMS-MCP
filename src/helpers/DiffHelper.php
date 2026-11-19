@@ -52,7 +52,13 @@ class DiffHelper
         return '<div class="mcp-diff-text">' . self::words($a, $b) . '</div>';
     }
 
-    /** Word level diff as HTML with <del> / <ins>. */
+    /**
+     * Word level diff as HTML with <del> / <ins>.
+     *
+     * Whitespace belongs to the word before it, so it never splits a change into pieces. Very short common words
+     * between two changes are folded into the change, and heavily rewritten text is shown as "old / new" instead of
+     * an unreadable mix of tiny strike-throughs.
+     */
     public static function words(string $old, string $new): string
     {
         if ($old === $new) {
@@ -65,21 +71,62 @@ class DiffHelper
             return '<del>' . self::e($old) . '</del>';
         }
 
-        $a = preg_split('/(\s+)/u', $old, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY) ?: [];
-        $b = preg_split('/(\s+)/u', $new, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY) ?: [];
+        $a = self::tokens($old);
+        $b = self::tokens($new);
         $n = count($a);
         $m = count($b);
 
         if ($n * $m > self::MAX_LCS_CELLS) {
-            return '<del>' . self::e($old) . '</del> <ins>' . self::e($new) . '</ins>';
+            return self::pair($old, $new);
         }
+
+        $keyA = array_map('trim', $a);
+        $keyB = array_map('trim', $b);
 
         // Longest common subsequence table (rows: old tokens, cols: new tokens)
         $lcs = array_fill(0, $n + 1, array_fill(0, $m + 1, 0));
         for ($i = $n - 1; $i >= 0; $i--) {
             for ($j = $m - 1; $j >= 0; $j--) {
-                $lcs[$i][$j] = $a[$i] === $b[$j] ? $lcs[$i + 1][$j + 1] + 1 : max($lcs[$i + 1][$j], $lcs[$i][$j + 1]);
+                $lcs[$i][$j] = $keyA[$i] === $keyB[$j] ? $lcs[$i + 1][$j + 1] + 1 : max($lcs[$i + 1][$j], $lcs[$i][$j + 1]);
             }
+        }
+
+        // Operations: '=' common, '-' removed, '+' added
+        $ops = [];
+        $i = $j = 0;
+        while ($i < $n && $j < $m) {
+            if ($keyA[$i] === $keyB[$j]) {
+                $ops[] = ['=', $b[$j]];
+                $i++;
+                $j++;
+            } elseif ($lcs[$i + 1][$j] >= $lcs[$i][$j + 1]) {
+                $ops[] = ['-', $a[$i++]];
+            } else {
+                $ops[] = ['+', $b[$j++]];
+            }
+        }
+        while ($i < $n) {
+            $ops[] = ['-', $a[$i++]];
+        }
+        while ($j < $m) {
+            $ops[] = ['+', $b[$j++]];
+        }
+
+        // Fold short common words that sit between two changes into the change ("x" = shown as removed AND added)
+        $count = count($ops);
+        for ($k = 1; $k < $count - 1; $k++) {
+            if ($ops[$k][0] === '=' && $ops[$k - 1][0] !== '=' && $ops[$k + 1][0] !== '=' && mb_strlen(trim($ops[$k][1])) <= 3) {
+                $ops[$k][0] = 'x';
+            }
+        }
+
+        // Mostly rewritten: show old and new instead of a confetti of changes
+        $common = 0;
+        foreach ($ops as [$kind]) {
+            $common += $kind === '=' ? 1 : 0;
+        }
+        if (max($n, $m) >= 4 && $common / max($n, $m) < 0.4) {
+            return self::pair($old, $new);
         }
 
         $out = '';
@@ -87,36 +134,45 @@ class DiffHelper
         $ins = '';
         $flush = function () use (&$out, &$del, &$ins) {
             if ($del !== '') {
-                $out .= '<del>' . self::e($del) . '</del>';
+                $out .= '<del>' . self::e(rtrim($del)) . '</del>' . (strlen($del) !== strlen(rtrim($del)) ? ' ' : '');
             }
             if ($ins !== '') {
-                $out .= '<ins>' . self::e($ins) . '</ins>';
+                $out .= '<ins>' . self::e(rtrim($ins)) . '</ins>' . (strlen($ins) !== strlen(rtrim($ins)) ? ' ' : '');
             }
             $del = $ins = '';
         };
-
-        $i = $j = 0;
-        while ($i < $n && $j < $m) {
-            if ($a[$i] === $b[$j]) {
+        foreach ($ops as [$kind, $token]) {
+            if ($kind === '=') {
                 $flush();
-                $out .= self::e($a[$i]);
-                $i++;
-                $j++;
-            } elseif ($lcs[$i + 1][$j] >= $lcs[$i][$j + 1]) {
-                $del .= $a[$i++];
+                $out .= self::e($token);
+            } elseif ($kind === '-') {
+                $del .= $token;
+            } elseif ($kind === '+') {
+                $ins .= $token;
             } else {
-                $ins .= $b[$j++];
+                $del .= $token;
+                $ins .= $token;
             }
-        }
-        while ($i < $n) {
-            $del .= $a[$i++];
-        }
-        while ($j < $m) {
-            $ins .= $b[$j++];
         }
         $flush();
 
         return $out;
+    }
+
+    /**
+     * Words and punctuation as separate tokens, each with its trailing whitespace attached,
+     * so whitespace is never matched on its own and "lighting," still matches "lighting".
+     */
+    private static function tokens(string $text): array
+    {
+        preg_match_all('/[\p{L}\p{N}_\'’-]+\s*|[^\p{L}\p{N}\s]+\s*|\s+/u', $text, $matches);
+        return $matches[0];
+    }
+
+    /** Old and new text one below the other. */
+    private static function pair(string $old, string $new): string
+    {
+        return '<div class="mcp-diff-pair"><div class="mcp-diff-old">' . self::e($old) . '</div><div class="mcp-diff-new">' . self::e($new) . '</div></div>';
     }
 
     /** Turns any value into display text. HTML becomes text with line breaks at block boundaries. */
@@ -135,10 +191,10 @@ class DiffHelper
         if ($text !== strip_tags($text)) {
             $text = preg_replace('#<\s*(br|/p|/div|/li|/h[1-6]|/tr)\s*/?>#i', "\n", $text) ?? $text;
             $text = preg_replace('#<\s*li[^>]*>#i', '• ', $text) ?? $text;
-            $text = html_entity_decode(strip_tags($text), ENT_QUOTES | ENT_HTML5, 'UTF-8');
-            $text = trim(preg_replace("/\n{3,}/", "\n\n", $text) ?? $text);
+            $text = strip_tags($text);
         }
-        return $text;
+        $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        return trim(preg_replace("/\n{3,}/", "\n\n", $text) ?? $text);
     }
 
     /** True for the serialized form of a Matrix field: a map of blocks that each have "type" and "fields". */
@@ -182,7 +238,7 @@ class DiffHelper
             }
 
             // same position and type: show what changed inside
-            if (isset($oldList[$i]) && empty($used[$i]) && ($oldList[$i]['type'] ?? null) === ($block['type'] ?? null)) {
+            if (isset($oldList[$i]) && empty($used[$i]) && ($oldList[$i]['type'] ?? null) === ($block['type'] ?? null) && self::sharesContent($oldList[$i], $block)) {
                 $used[$i] = true;
                 $html .= '<div class="mcp-block mcp-block-changed"><span class="mcp-tag mcp-tag-changed">' . self::t('changed') . '</span> ' . self::e($label)
                     . self::blockFields($oldList[$i], $block) . '</div>';
@@ -201,6 +257,26 @@ class DiffHelper
         }
 
         return $html;
+    }
+
+    /** True if the title or at least one field is identical, i.e. the new block is an edit of the old one, not a replacement. */
+    private static function sharesContent(array $old, array $new): bool
+    {
+        if (trim((string)($old['title'] ?? '')) !== '' && ($old['title'] ?? null) === ($new['title'] ?? null)) {
+            return true;
+        }
+        foreach ($new['fields'] ?? [] as $handle => $value) {
+            if (array_key_exists($handle, $old['fields'] ?? []) && !self::isEmptyValue($value) && self::same($old['fields'][$handle], $value)) {
+                return true;
+            }
+        }
+        // Blocks without any content (e.g. a headline block without fields) are the same block.
+        return !($old['fields'] ?? []) && !($new['fields'] ?? []) && ($old['title'] ?? '') === ($new['title'] ?? '');
+    }
+
+    private static function isEmptyValue(mixed $v): bool
+    {
+        return $v === null || $v === '' || $v === [];
     }
 
     private static function blockLabel(array $block): string

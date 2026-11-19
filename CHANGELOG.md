@@ -1,5 +1,12 @@
 # Release Notes for MCP Server
 
+## 1.0.1 - 2026-11-19
+
+- Clearer before/after view in **MCP → Approvals**: words and punctuation are compared separately, heavily rewritten text is shown as old and new side by side instead of many tiny changes, and HTML entities are decoded
+- Matrix blocks are only shown as “changed” when part of the block stayed the same; replaced blocks appear as removed and new
+- Batch labels in the approvals list use an unambiguous date format (`2026-11-19 22:35`)
+- Unit tests for the diff view
+
 ## 1.0.0 - 2026-11-19
 
 First release.
