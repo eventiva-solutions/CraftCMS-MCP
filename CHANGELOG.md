@@ -1,5 +1,9 @@
 # Release Notes for MCP Server
 
+## 0.4.0 - 2026-11-19
+- Added Craft License (`LICENSE.md`), English `README.md`, `SECURITY.md` and Plugin Store texts (`docs/store-listing.md`)
+- Added unit tests (tool catalogue, scopes, schemas) and an end-to-end smoke test script
+
 ## 0.3.1 - 2026-11-19
 - Fix: `get_entry_type` with a handle failed on Craft 5.11 (`getIsTranslatable()` needs an argument)
 - Content created or changed through MCP is indexed for search immediately (no queue run needed)

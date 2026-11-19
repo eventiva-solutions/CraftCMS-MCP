@@ -1,55 +1,98 @@
 # MCP Server for Craft CMS
 
-Verbindet LLM-Clients (Claude, Codex, …) per [Model Context Protocol](https://modelcontextprotocol.io) mit Craft CMS, um Inhalte zu pflegen: Einträge, Entwürfe, Assets, Kategorien und Tags, dazu eine Suche. **Keine Verwaltungseinstellungen**: Sections, Entry Types, Felder, Plugins, Benutzer und System bleiben unerreichbar. Sections und Felder können nur gelesen werden.
+Let AI assistants such as **Claude** and **Codex** maintain your Craft CMS content through the [Model Context Protocol](https://modelcontextprotocol.io) – with scoped API tokens, Craft permissions and a full audit log.
+
+The assistant can search and read entries, create and edit entries and drafts, upload and organize assets, and manage categories and tags. It can **not** change your site's configuration: sections, entry types, fields, plugins, users, project config and system settings are out of reach (sections and fields are read-only so the assistant knows how your content is structured).
+
+> German documentation: [README.de.md](README.de.md)
+
+## Requirements
+- Craft CMS 5.0 or later (tested with 5.11)
+- PHP 8.2 or later (tested with 8.4)
+- A public or private HTTPS URL for the Craft site (the MCP endpoint is `POST /mcp`)
 
 ## Installation
 ```bash
 composer require eventiva/craft-mcp
 php craft plugin/install mcp-server
 ```
-Handle: `mcp-server`. Das Plugin kann neben `stimmt/craft-mcp` (Handle `mcp`) installiert sein, es nutzt eigene Tabellen (`mcpserver_tokens`, `mcpserver_audit`).
+Or install it from the Craft Plugin Store. The plugin handle is `mcp-server`. It can be installed next to `stimmt/craft-mcp` (handle `mcp`); the two plugins use separate tables and routes.
 
-## Einrichtung
-1. CP → **MCP → Tokens** (`/admin/mcp-server`) → Token anlegen: Craft-Benutzer, Rechte `write` / `delete`, optional Sections, Ablaufdatum.
-2. Der Token wird **einmalig** angezeigt, zusammen mit fertigen Befehlen:
+## Setup
+1. In the control panel open **MCP → Tokens** and create a token:
+   - the Craft **user** whose permissions the token acts with (recommended: a dedicated user with minimal permissions),
+   - **scopes**: `read` is always on; add `write` and/or `delete` only if needed,
+   - optionally limit the token to certain **sections** and set an **expiry date**.
+2. Copy the token – it is shown **once**. The page also shows ready-made commands for your client.
 
+**Claude Code**
 ```bash
 claude mcp add --transport http craft https://example.com/mcp \
   --header "Authorization: Bearer cmcp_…"
 ```
 
+**Codex** (`~/.codex/config.toml`)
 ```toml
-# ~/.codex/config.toml
 [mcp_servers.craft]
 url = "https://example.com/mcp"
 http_headers = { Authorization = "Bearer cmcp_…" }
 ```
 
-Entfernt dein Hoster den `Authorization`-Header, nutze stattdessen den Header `X-Mcp-Token: cmcp_…`. Betreibe den Endpoint nur über HTTPS.
+If your host strips the `Authorization` header, send the token in an `X-Mcp-Token` header instead.
 
-## Sicherheit
-- Tokens werden nur als SHA-256-Hash gespeichert und nach dem Anlegen nie wieder angezeigt.
-- Alle Aktionen laufen mit den Craft-Rechten des zugeordneten Benutzers. Empfohlen: ein eigener Benutzer mit minimalen Rechten.
-- Scopes: `read` (immer), `write`, `delete` (Standard aus). Optionale Beschränkung auf bestimmte Sections.
-- Rate-Limit: 120 Requests pro Minute und Token (HTTP 429).
-- Jeder Tool-Aufruf landet im Audit-Log (CP → MCP → Audit-Log, 90 Tage Aufbewahrung). Große Werte werden gekürzt.
-- Datei-Upload per URL: nur http(s), keine privaten oder reservierten Adressen (SSRF-Schutz), keine Redirects, max. 20 MB.
-- Neue Einträge werden standardmäßig **deaktiviert** angelegt (`enabled=false`).
-- Löschen ist ein Soft-Delete und im CP wiederherstellbar.
+## What the assistant can do
 
-## Tools
 | Scope | Tools |
 |---|---|
 | `read` | `list_sites`, `list_sections`, `get_entry_type`, `search_entries`, `get_entry`, `list_volumes`, `list_asset_folders`, `search_assets`, `get_asset`, `list_taxonomies`, `search_terms` |
 | `write` | `create_entry`, `update_entry`, `create_draft`, `publish_draft`, `upload_asset`, `update_asset`, `create_asset_folder`, `create_term`, `update_term` |
-| `delete` | `delete_entry`, `delete_asset`, `delete_term` |
+| `delete` | `delete_entry`, `delete_asset`, `delete_term` (soft delete, restorable in the control panel) |
 
-Empfohlener Ablauf für das Modell: `list_sections` → `get_entry_type` (Feld-Handles und Formate) → `search_entries` / `get_entry` → `create_entry` / `update_entry` oder `create_draft`.
+A good workflow for the assistant: `list_sections` → `get_entry_type` (field handles and formats) → `search_entries` / `get_entry` → `create_entry` / `update_entry`, or `create_draft` for changes to live content.
 
-## Hinweise
-- **Suche:** Craft aktualisiert den Suchindex über die Queue. Neue oder geänderte Inhalte sind erst nach dem nächsten Queue-Lauf per Suche auffindbar (wie im CP).
-- **Asset-Uploads** gehen in das konfigurierte Volume (auch S3/Object Storage). Beim Testen auf Kopien der Live-Daten darauf achten, dass die Volumes nicht auf den echten Speicher zeigen.
-- Entwürfe (`create_draft`) sind die sicherere Wahl für Änderungen an live geschalteten Inhalten.
+Highlights:
+- Works with any field type Craft can serialize: plain text, rich text, dropdowns, dates, tables, relations, Matrix, assets, categories, tags.
+- Helpful errors: wrong field handles, validation problems or missing permissions are returned in plain language so the assistant can correct itself.
+- `get_entry` can return only selected fields (`fields`) and shortens huge SEO bundles by default to save context.
+- New entries are created **disabled** by default. Changes to live content are best made through drafts.
+- Content created or changed through MCP is indexed for search immediately.
 
-## Lizenz
-Proprietär, © Eventiva.
+## Security
+- Tokens are stored only as SHA-256 hashes and are never shown again.
+- Every action runs with the Craft permissions of the token's user, on top of the token scopes.
+- Optional restriction to specific sections; optional expiry date; revoke any time.
+- Rate limit: 120 requests per minute per token (HTTP 429).
+- Every tool call is written to the audit log (control panel, retained for 90 days; large values are shortened).
+- Uploads by URL accept only `http(s)`, refuse private and reserved addresses (SSRF protection), do not follow redirects and are limited to 20 MB.
+- Deleting is a soft delete.
+- Use HTTPS only. See [SECURITY.md](SECURITY.md) for recommendations and how to report vulnerabilities.
+
+## Notes and limitations
+- Authentication is by bearer token (no OAuth login flow yet). The transport is Streamable HTTP (JSON responses, no SSE stream); `GET /mcp` answers `405`.
+- Asset uploads go to the configured volume (including S3 / object storage). When testing on a copy of production data, make sure the volumes do not point to the real storage.
+- Search relies on Craft's search index. Fields marked as not searchable are not found by `search_entries`.
+- The plugin does not modify sections, fields, entry types, users, plugins or system settings, and never will.
+
+## Troubleshooting
+| Symptom | Likely cause |
+|---|---|
+| `401 Invalid or missing token` | Wrong, expired or revoked token; some hosts strip `Authorization` – use `X-Mcp-Token`. |
+| `Token lacks the 'write' scope…` | Create a token with the needed scope. |
+| `This token has no access to section …` | The token is limited to other sections. |
+| `429` | More than 120 requests/minute with one token. |
+| Client shows "connecting…" | Check that `https://your-site/mcp` is reachable and answers `POST` with JSON; check the audit log. |
+
+## Development and tests
+```bash
+# Unit tests (tool catalogue, scopes, schemas) – needs a Craft 5 project's vendor directory
+CRAFT_VENDOR_PATH=/path/to/project/vendor vendor/bin/phpunit -c phpunit.xml
+
+# End-to-end smoke test against a DEV/STAGING site (creates and deletes one entry)
+MCP_URL=https://dev.example.com/mcp MCP_TOKEN=cmcp_… MCP_TOKEN_READ=cmcp_… MCP_TEST_SECTION=blog   python tests/integration/smoke_test.py
+```
+
+## Support
+Issues and questions: https://github.com/eventiva-solutions/CraftCMS-MCP/issues
+
+## License
+This is a commercial plugin released under the [Craft License](LICENSE.md). One license per production site.

@@ -18,15 +18,26 @@
     "php": ">=8.2",
     "craftcms/cms": "^5.0"
   },
+  "require-dev": {
+    "phpunit/phpunit": "^10.5 || ^11.0"
+  },
   "autoload": {
     "psr-4": {
       "eventiva\\mcp\\": "src/"
     }
   },
+  "autoload-dev": {
+    "psr-4": {
+      "eventiva\\mcp\tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "test": "phpunit -c phpunit.xml"
+  },
   "extra": {
     "handle": "mcp-server",
     "name": "MCP Server",
-    "version": "0.3.1",
+    "version": "0.4.0",
     "schemaVersion": "1.0.0",
     "developer": "Eventiva",
     "developerUrl": "https://eventiva.io",
