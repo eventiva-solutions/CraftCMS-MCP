@@ -8,8 +8,8 @@ class Install extends Migration
 {
     public function safeUp(): bool
     {
-        if (!$this->db->tableExists('{{%mcp_tokens}}')) {
-            $this->createTable('{{%mcp_tokens}}', [
+        if (!$this->db->tableExists('{{%mcpserver_tokens}}')) {
+            $this->createTable('{{%mcpserver_tokens}}', [
                 'id' => $this->primaryKey(),
                 'name' => $this->string(100)->notNull(),
                 'tokenHash' => $this->char(64)->notNull(),
@@ -23,13 +23,13 @@ class Install extends Migration
                 'dateUpdated' => $this->dateTime()->notNull(),
                 'uid' => $this->uid(),
             ]);
-            $this->createIndex(null, '{{%mcp_tokens}}', ['tokenHash'], true);
-            $this->createIndex(null, '{{%mcp_tokens}}', ['userId']);
-            $this->addForeignKey(null, '{{%mcp_tokens}}', ['userId'], '{{%users}}', ['id'], 'CASCADE', 'CASCADE');
+            $this->createIndex(null, '{{%mcpserver_tokens}}', ['tokenHash'], true);
+            $this->createIndex(null, '{{%mcpserver_tokens}}', ['userId']);
+            $this->addForeignKey(null, '{{%mcpserver_tokens}}', ['userId'], '{{%users}}', ['id'], 'CASCADE', 'CASCADE');
         }
 
-        if (!$this->db->tableExists('{{%mcp_audit}}')) {
-            $this->createTable('{{%mcp_audit}}', [
+        if (!$this->db->tableExists('{{%mcpserver_audit}}')) {
+            $this->createTable('{{%mcpserver_audit}}', [
                 'id' => $this->primaryKey(),
                 'tokenId' => $this->integer()->null(),
                 'tokenName' => $this->string(100)->null(),
@@ -42,9 +42,9 @@ class Install extends Migration
                 'dateUpdated' => $this->dateTime()->notNull(),
                 'uid' => $this->uid(),
             ]);
-            $this->createIndex(null, '{{%mcp_audit}}', ['tokenId']);
-            $this->createIndex(null, '{{%mcp_audit}}', ['dateCreated']);
-            $this->addForeignKey(null, '{{%mcp_audit}}', ['tokenId'], '{{%mcp_tokens}}', ['id'], 'SET NULL', 'CASCADE');
+            $this->createIndex(null, '{{%mcpserver_audit}}', ['tokenId']);
+            $this->createIndex(null, '{{%mcpserver_audit}}', ['dateCreated']);
+            $this->addForeignKey(null, '{{%mcpserver_audit}}', ['tokenId'], '{{%mcpserver_tokens}}', ['id'], 'SET NULL', 'CASCADE');
         }
 
         return true;
@@ -52,8 +52,8 @@ class Install extends Migration
 
     public function safeDown(): bool
     {
-        $this->dropTableIfExists('{{%mcp_audit}}');
-        $this->dropTableIfExists('{{%mcp_tokens}}');
+        $this->dropTableIfExists('{{%mcpserver_audit}}');
+        $this->dropTableIfExists('{{%mcpserver_tokens}}');
         return true;
     }
 }

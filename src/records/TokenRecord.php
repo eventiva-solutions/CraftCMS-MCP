@@ -19,7 +19,7 @@ class TokenRecord extends ActiveRecord
 {
     public static function tableName(): string
     {
-        return '{{%mcp_tokens}}';
+        return '{{%mcpserver_tokens}}';
     }
 
     /** @return string[] */

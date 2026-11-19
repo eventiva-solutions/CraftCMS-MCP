@@ -19,6 +19,6 @@ class AuditRecord extends ActiveRecord
 {
     public static function tableName(): string
     {
-        return '{{%mcp_audit}}';
+        return '{{%mcpserver_audit}}';
     }
 }
