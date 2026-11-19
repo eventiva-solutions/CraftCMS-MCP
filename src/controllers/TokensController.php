@@ -61,7 +61,15 @@ class TokensController extends Controller
         $scopes = array_intersect(TokenService::SCOPES, (array)$request->getBodyParam('scopes', []));
         $sections = array_filter((array)$request->getBodyParam('allowedSections', []));
         $expires = $request->getBodyParam('expiresAt');
-        $expiresAt = $expires ? (\DateTime::createFromFormat('Y-m-d', is_array($expires) ? ($expires['date'] ?? '') : $expires) ?: null) : null;
+        $expiryDate = is_array($expires) ? ($expires['date'] ?? '') : (string)$expires;
+        // Expire at the end of the chosen day. The date picker may deliver Y-m-d or a localized date.
+        $expiresAt = null;
+        if ($expiryDate !== '') {
+            $parsed = \DateTime::createFromFormat('Y-m-d', $expiryDate) ?: (\DateTime::createFromFormat('n/j/Y', $expiryDate) ?: (\DateTime::createFromFormat('d.m.Y', $expiryDate) ?: null));
+            if ($parsed) {
+                $expiresAt = $parsed->setTime(23, 59, 59);
+            }
+        }
 
         [, $plain] = Mcp::getInstance()->tokens->create($name, $userId, $scopes, $expiresAt, $sections ?: null);
 
