@@ -42,10 +42,20 @@ class McpController extends Controller
         }
 
         // Rate limit: 120 requests / minute / token.
+        // The counter is incremented under a mutex so parallel requests cannot overwrite each other.
         $cache = Craft::$app->getCache();
-        $key = 'mcp_rate_' . $token->id . '_' . floor(time() / 60);
-        $count = (int)$cache->get($key) + 1;
-        $cache->set($key, $count, 120);
+        $mutex = Craft::$app->getMutex();
+        $lock = 'mcp-rate-' . $token->id;
+        $key = 'mcp_rate_' . $token->id . '_' . (int)floor(time() / 60);
+        $count = 0;
+        if ($mutex->acquire($lock, 3)) {
+            try {
+                $count = (int)$cache->get($key) + 1;
+                $cache->set($key, $count, 120);
+            } finally {
+                $mutex->release($lock);
+            }
+        }
         if ($count > 120) {
             $response->setStatusCode(429);
             $response->getHeaders()->set('Retry-After', '60');

@@ -4,6 +4,7 @@ namespace eventiva\mcp\tools\write;
 
 use Craft;
 use craft\elements\Asset;
+use craft\helpers\FileHelper;
 use eventiva\mcp\tools\AbstractTool;
 use eventiva\mcp\tools\Serializes;
 use eventiva\mcp\tools\Writes;
@@ -58,20 +59,29 @@ class UpdateAsset extends AbstractTool
         if (array_key_exists('alt', $args)) {
             $asset->alt = (string)$args['alt'];
         }
-        if (!empty($args['filename'])) {
-            $asset->newFilename = (string)$args['filename'];
-        }
-        if (!empty($args['folderId'])) {
-            if (!Craft::$app->getAssets()->getFolderById((int)$args['folderId'])) {
-                throw new \InvalidArgumentException('Unknown folderId. Use list_asset_folders.');
-            }
-            $asset->newFolderId = (int)$args['folderId'];
-        }
-        $asset->setScenario(Asset::SCENARIO_FILEOPS);
         $this->applyFields($asset, $args['fields'] ?? null);
 
         $this->assertCanSave($asset);
         $this->saveOrFail($asset);
+
+        // Renaming / moving goes through the Assets service (handles the file operation).
+        if (!empty($args['filename']) || !empty($args['folderId'])) {
+            $assets = Craft::$app->getAssets();
+            $folder = !empty($args['folderId']) ? $assets->getFolderById((int)$args['folderId']) : $asset->getFolder();
+            if (!$folder) {
+                throw new \InvalidArgumentException('Unknown folderId. Use list_asset_folders.');
+            }
+            $filename = !empty($args['filename']) ? FileHelper::sanitizeFilename((string)$args['filename']) : '';
+            if ($filename !== '' && !str_contains($filename, '.')) {
+                throw new \InvalidArgumentException('filename must include the extension.');
+            }
+            if (!Craft::$app->getElements()->canSave($asset, $this->user())) {
+                throw new \RuntimeException('The token user is not allowed to move or rename this asset.');
+            }
+            if (!$assets->moveAsset($asset, $folder, $filename)) {
+                throw new \RuntimeException('Move/rename failed: ' . implode(' | ', $asset->getFirstErrors()));
+            }
+        }
 
         return $this->assetSummary($asset);
     }
